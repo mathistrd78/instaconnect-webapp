@@ -19,14 +19,36 @@ const ContactCard = ({ contact, onEdit }) => {
   const getTagDisplay = (fieldId) => {
     const value = contact[fieldId];
     if (!value) return null;
-
-    // For simple values, return as is
-    if (fieldId === 'gender') {
-      return value;
-    }
-
-    // For tagged values, try to find the label
     return value;
+  };
+
+  // FIX: Gérer le champ location (objet ou string)
+  const getLocationDisplay = () => {
+    if (!contact.location) return null;
+    
+    // Si c'est un objet (ancien format)
+    if (typeof contact.location === 'object' && contact.location !== null) {
+      if (contact.location.displayName) {
+        return contact.location.displayName;
+      }
+      // Construire manuellement si displayName n'existe pas
+      if (contact.location.city && contact.location.country) {
+        return `${contact.location.city}, ${contact.location.country}`;
+      }
+      if (contact.location.city) {
+        return contact.location.city;
+      }
+      if (contact.location.country) {
+        return contact.location.country;
+      }
+    }
+    
+    // Si c'est une string (nouveau format)
+    if (typeof contact.location === 'string') {
+      return contact.location;
+    }
+    
+    return null;
   };
 
   return (
@@ -63,9 +85,9 @@ const ContactCard = ({ contact, onEdit }) => {
           </div>
         )}
 
-        {contact.location && (
+        {getLocationDisplay() && (
           <div className="contact-location">
-            📍 {contact.location}
+            📍 {getLocationDisplay()}
           </div>
         )}
 
