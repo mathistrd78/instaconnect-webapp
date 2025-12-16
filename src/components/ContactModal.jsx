@@ -9,7 +9,14 @@ const ContactModal = ({ contact, onClose }) => {
 
   useEffect(() => {
     if (contact) {
-      setFormData(contact);
+      // FIX: Convertir l'ancien format location (objet) vers le nouveau (string)
+      const cleanedContact = { ...contact };
+      if (cleanedContact.location && typeof cleanedContact.location === 'object') {
+        cleanedContact.location = cleanedContact.location.displayName || 
+                                   cleanedContact.location.city || 
+                                   '';
+      }
+      setFormData(cleanedContact);
     } else {
       setFormData({});
     }
@@ -142,11 +149,23 @@ const ContactModal = ({ contact, onClose }) => {
         );
 
       case 'city':
+        // FIX: Gérer l'ancien format objet et le nouveau format string
+        const locationValue = formData[field.id];
+        let displayValue = '';
+        
+        if (typeof locationValue === 'object' && locationValue !== null) {
+          displayValue = locationValue.displayName || 
+                        locationValue.city || 
+                        '';
+        } else if (typeof locationValue === 'string') {
+          displayValue = locationValue;
+        }
+        
         return (
           <input
             type="text"
             className="form-input"
-            value={formData[field.id] || ''}
+            value={displayValue}
             onChange={(e) => handleChange(field.id, e.target.value)}
             placeholder="Ville"
           />
