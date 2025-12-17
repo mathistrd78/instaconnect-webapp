@@ -81,13 +81,28 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       return getCountryOptions();
     }
 
-    // Regular fields with tags
+    // Regular fields with tags - REMOVE DUPLICATES
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
-    return allTags;
+    
+    // Remove duplicates based on value
+    const uniqueTags = [];
+    const seenValues = new Set();
+    
+    allTags.forEach(tag => {
+      const value = tag.value || tag;
+      if (!seenValues.has(value)) {
+        seenValues.add(value);
+        uniqueTags.push(tag);
+      }
+    });
+    
+    return uniqueTags;
   };
 
   const toggleFilter = (fieldId, value) => {
+    console.log('Toggle filter:', fieldId, value); // Debug
+    
     const current = activeFilters[fieldId] || [];
     const newFilters = current.includes(value)
       ? current.filter(v => v !== value)
@@ -105,6 +120,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       }
     });
     
+    console.log('Updated filters:', updatedFilters); // Debug
     onFilterChange(updatedFilters);
   };
 
@@ -129,9 +145,11 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
             <button
               className={`filter-btn ${activeCount > 0 ? 'active' : ''}`}
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setOpenDropdown(isOpen ? null : field.id);
               }}
+              type="button"
             >
               {field.label}
               {activeCount > 0 && <span className="filter-count">{activeCount}</span>}
@@ -139,7 +157,10 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
             </button>
 
             {isOpen && (
-              <div className="filter-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+              <div 
+                className="filter-dropdown-menu"
+                onMouseDown={(e) => e.preventDefault()}
+              >
                 {fieldOptions.length === 0 ? (
                   <div className="filter-empty">Aucune option disponible</div>
                 ) : (
@@ -150,9 +171,10 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
                     
                     return (
                       <div 
-                        key={optionValue} 
+                        key={`${field.id}-${optionValue}`}
                         className="filter-option"
-                        onClick={(e) => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           toggleFilter(field.id, optionValue);
                         }}
@@ -160,8 +182,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}} // Controlled by parent onClick
-                          onClick={(e) => e.stopPropagation()}
+                          readOnly
                         />
                         <span>{optionLabel}</span>
                       </div>
@@ -175,7 +196,11 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       })}
 
       {hasActiveFilters && (
-        <button className="filter-clear-btn" onClick={clearFilters}>
+        <button 
+          className="filter-clear-btn" 
+          onClick={clearFilters}
+          type="button"
+        >
           ✕ Effacer les filtres
         </button>
       )}
@@ -184,3 +209,33 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 };
 
 export default FilterBar;
+```
+
+---
+
+## ✅ Changements clés
+
+**Problème 1 : Sélection aléatoire**
+- ✅ Remplacé `onClick` par `onMouseDown` (plus fiable)
+- ✅ Ajouté `e.preventDefault()` pour empêcher comportements par défaut
+- ✅ Input en `readOnly` au lieu de `onChange`
+- ✅ Ajouté `type="button"` sur les boutons
+
+**Problème 2 : Doublons**
+- ✅ Fonction de dédoublonnage basée sur `value`
+- ✅ Utilise un `Set` pour tracker les valeurs déjà vues
+- ✅ Ne garde que la première occurrence
+
+**Debug**
+- ✅ Ajout de `console.log` pour voir ce qui se passe
+
+---
+
+## 🧪 Test après le push
+
+1. Ouvrez la console (F12)
+2. Cliquez sur une option
+3. Vous devriez voir :
+```
+   Toggle filter: relationType "Ami"
+   Updated filters: {relationType: ["Ami"]}
