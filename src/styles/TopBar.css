@@ -54,6 +54,28 @@
   background: var(--border-color);
 }
 
+/* Nouvelle Analyse Button */
+.topbar-btn-analyse {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.topbar-btn-analyse:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .topbar-user {
   position: relative;
 }
@@ -163,6 +185,15 @@
   
   .topbar-logo-text {
     font-size: 20px;
+  }
+  
+  .topbar-btn-analyse {
+    font-size: 20px;
+    padding: 8px;
+  }
+  
+  .topbar-btn-analyse span {
+    display: none;
   }
   
   .user-name {
