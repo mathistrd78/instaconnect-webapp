@@ -3,7 +3,7 @@
 .topbar {
   position: fixed;
   top: 0;
-  left: 260px; /* After sidebar */
+  left: 0;
   right: 0;
   height: 70px;
   background: var(--surface);
@@ -13,7 +13,7 @@
   justify-content: space-between;
   padding: 0 32px;
   gap: 24px;
-  z-index: 100;
+  z-index: 200;
 }
 
 .topbar-title {
@@ -185,7 +185,6 @@
 /* Responsive */
 @media (max-width: 768px) {
   .topbar {
-    left: 80px; /* Sidebar réduite */
     padding: 0 16px;
   }
   
