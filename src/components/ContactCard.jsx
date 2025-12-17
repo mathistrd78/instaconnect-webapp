@@ -37,12 +37,8 @@ const ContactCard = ({ contact, onEdit }) => {
   const handleDelete = async (e) => {
     e.stopPropagation();
     if (window.confirm(`Supprimer ${contact.firstName || 'ce contact'} ?`)) {
-      await deleteContact(contact.id);
+      await deleteDelete(contact.id);
     }
-  };
-
-  const getInitial = () => {
-    return contact.firstName?.charAt(0)?.toUpperCase() || '?';
   };
 
   const getTagDisplay = (fieldId) => {
@@ -51,14 +47,26 @@ const ContactCard = ({ contact, onEdit }) => {
     return value;
   };
 
+  const handleInstagramClick = (e) => {
+    e.stopPropagation();
+    if (contact.instagram) {
+      window.open(`https://instagram.com/${contact.instagram}`, '_blank');
+    }
+  };
+
   return (
     <div className="contact-card" onClick={onEdit}>
       <div className="contact-card-header">
-        <div className="contact-avatar">{getInitial()}</div>
         <div className="contact-info">
           <div className="contact-name">{contact.firstName || 'Sans nom'}</div>
           {contact.instagram && (
-            <div className="contact-instagram">@{contact.instagram}</div>
+            <div 
+              className="contact-instagram" 
+              onClick={handleInstagramClick}
+              title="Ouvrir le profil Instagram"
+            >
+              @{contact.instagram}
+            </div>
           )}
         </div>
       </div>
