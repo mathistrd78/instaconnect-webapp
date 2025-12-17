@@ -168,9 +168,11 @@ export const AppProvider = ({ children }) => {
         if (userData.customFields) {
           setCustomFields(userData.customFields);
         }
-        if (userData.defaultFields) {
-          setDefaultFields(userData.defaultFields);
-        }
+        // NE PAS charger defaultFields depuis Firebase
+        // Pour toujours utiliser les champs à jour du code
+        // if (userData.defaultFields) {
+        //   setDefaultFields(userData.defaultFields);
+        // }
       }
 
       // Load contacts
