@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import '../styles/ContactCard.css';
 
 const ContactCard = ({ contact, onEdit }) => {
-  const { deleteContact, updateContact } = useApp();
+  const { updateContact } = useApp();
 
   // FIX: Déclarer getLocationDisplay EN PREMIER
   const getLocationDisplay = () => {
@@ -32,13 +32,6 @@ const ContactCard = ({ contact, onEdit }) => {
     }
     
     return null;
-  };
-
-  const handleDelete = async (e) => {
-    e.stopPropagation();
-    if (window.confirm(`Supprimer ${contact.firstName || 'ce contact'} ?`)) {
-      await deleteContact(contact.id);
-    }
   };
 
   const toggleFavorite = async (e) => {
@@ -132,16 +125,6 @@ const ContactCard = ({ contact, onEdit }) => {
             {contact.notes.length > 80 && '...'}
           </div>
         )}
-      </div>
-
-      <div className="contact-card-footer">
-        <button
-          className="contact-delete-btn"
-          onClick={handleDelete}
-          title="Supprimer"
-        >
-          🗑️
-        </button>
       </div>
     </div>
   );
