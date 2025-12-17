@@ -34,7 +34,7 @@
 /* Search Bar */
 .contacts-search {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .contacts-search .search-icon {
@@ -63,6 +63,45 @@
   border-color: #E1306C;
 }
 
+/* Alphabet Navigation */
+.alphabet-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 12px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.alphabet-letter {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.alphabet-letter.active:hover {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+}
+
+.alphabet-letter.disabled {
+  color: var(--text-secondary);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .contacts-content-web {
   margin-top: 24px;
 }
@@ -78,6 +117,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scroll-margin-top: 100px;
 }
 
 .letter-divider {
@@ -117,6 +157,16 @@
   
   .contacts-grid-web {
     grid-template-columns: 1fr;
+  }
+  
+  .alphabet-nav {
+    gap: 2px;
+  }
+  
+  .alphabet-letter {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
 }
 
