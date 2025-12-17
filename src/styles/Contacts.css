@@ -2,6 +2,7 @@
 .contacts-page-web {
   padding: 32px;
   min-height: calc(100vh - 70px);
+  position: relative;
 }
 
 .contacts-header-web {
@@ -84,7 +85,7 @@
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--text-primary);
+  color: #E1306C;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -100,6 +101,45 @@
   color: var(--text-secondary);
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* Scroll to Top Button */
+.scroll-to-top-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(225, 48, 108, 0.4);
+  transition: all 0.3s ease;
+  z-index: 50;
+  animation: fadeInUp 0.3s ease;
+}
+
+.scroll-to-top-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(225, 48, 108, 0.5);
+}
+
+.scroll-to-top-btn:active {
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .contacts-content-web {
@@ -167,6 +207,14 @@
     min-width: 28px;
     height: 28px;
     font-size: 12px;
+  }
+  
+  .scroll-to-top-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
   }
 }
 
