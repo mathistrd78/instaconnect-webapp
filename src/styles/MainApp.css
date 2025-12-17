@@ -2,15 +2,15 @@
   display: flex;
   min-height: 100vh;
   background: var(--background);
+  padding-top: 70px; /* Space for fixed TopBar */
 }
 
 .main-content-area {
   flex: 1;
   margin-left: 260px;
-  margin-top: 70px; /* Space for fixed TopBar */
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: calc(100vh - 70px);
 }
 
 .page-content {
