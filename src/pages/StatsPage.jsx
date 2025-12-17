@@ -1,143 +1,257 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import '../styles/Stats.css';
+import '../styles/Statistics.css';
 
-const StatsPage = () => {
+const StatisticsPage = () => {
   const { contacts, getAllFields } = useApp();
+  const [activeTab, setActiveTab] = useState('relationType');
 
+  // Get all categorizable fields (select, radio)
+  const categorizableFields = useMemo(() => {
+    return getAllFields().filter(field => 
+      field.type === 'select' || field.type === 'radio'
+    );
+  }, [getAllFields]);
+
+  // Set first field as active tab if exists
+  React.useEffect(() => {
+    if (categorizableFields.length > 0 && !activeTab) {
+      setActiveTab(categorizableFields[0].id);
+    }
+  }, [categorizableFields, activeTab]);
+
+  // Check if contact is complete
+  const isContactComplete = (contact) => {
+    const allFields = getAllFields();
+    const requiredFields = allFields.filter(f => f.required);
+    return requiredFields.every(field => {
+      const value = contact[field.id];
+      return value !== undefined && value !== null && value !== '';
+    });
+  };
+
+  // Calculate stats
   const stats = useMemo(() => {
     const total = contacts.length;
-    
-    // Count by gender
-    const genderCounts = contacts.reduce((acc, contact) => {
-      const gender = contact.gender || 'Non spécifié';
-      acc[gender] = (acc[gender] || 0) + 1;
-      return acc;
-    }, {});
+    const complete = contacts.filter(isContactComplete).length;
+    const incomplete = total - complete;
 
-    // Count by relation type
-    const relationCounts = contacts.reduce((acc, contact) => {
-      const relation = contact.relationType || 'Non spécifié';
-      acc[relation] = (acc[relation] || 0) + 1;
-      return acc;
-    }, {});
+    return { total, complete, incomplete };
+  }, [contacts]);
 
-    // Count by meeting place
-    const meetingCounts = contacts.reduce((acc, contact) => {
-      const place = contact.meetingPlace || 'Non spécifié';
-      acc[place] = (acc[place] || 0) + 1;
-      return acc;
-    }, {});
+  // Get distribution for a field (excluding undefined/null/empty)
+  const getFieldDistribution = (fieldId) => {
+    const distribution = {};
+    let totalDefined = 0;
 
-    // Count by discussion status
-    const statusCounts = contacts.reduce((acc, contact) => {
-      const status = contact.discussionStatus || 'Non spécifié';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
+    contacts.forEach(contact => {
+      const value = contact[fieldId];
+      if (value !== undefined && value !== null && value !== '') {
+        distribution[value] = (distribution[value] || 0) + 1;
+        totalDefined++;
+      }
+    });
 
-    // Count complete profiles
-    const allFields = getAllFields();
-    const completeProfiles = contacts.filter(contact => {
-      const requiredFields = allFields.filter(f => f.required);
-      return requiredFields.every(field => {
-        const value = contact[field.id];
-        return value !== undefined && value !== null && value !== '';
-      });
-    }).length;
+    // Convert to array and calculate percentages
+    const data = Object.entries(distribution).map(([label, count]) => ({
+      label,
+      count,
+      percentage: totalDefined > 0 ? ((count / totalDefined) * 100).toFixed(1) : 0
+    }));
 
+    // Sort by count descending
+    data.sort((a, b) => b.count - a.count);
+
+    return { data, totalDefined };
+  };
+
+  // Colors for pie chart
+  const colors = [
+    '#E1306C', // Pink
+    '#C13584', // Purple
+    '#F77737', // Orange
+    '#FCAF45', // Yellow
+    '#833AB4', // Deep purple
+    '#FD1D1D', // Red
+    '#405DE6', // Blue
+    '#5B51D8', // Indigo
+    '#C32AA3', // Magenta
+    '#F56040'  // Coral
+  ];
+
+  const activeField = categorizableFields.find(f => f.id === activeTab);
+  const { data: chartData, totalDefined } = activeField 
+    ? getFieldDistribution(activeField.id) 
+    : { data: [], totalDefined: 0 };
+
+  // Calculate pie chart segments
+  const createPieChart = (data) => {
+    if (data.length === 0) return [];
+
+    let currentAngle = -90; // Start from top
+    const segments = data.map((item, index) => {
+      const percentage = parseFloat(item.percentage);
+      const angle = (percentage / 100) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+
+      currentAngle = endAngle;
+
+      return {
+        ...item,
+        startAngle,
+        endAngle,
+        color: colors[index % colors.length]
+      };
+    });
+
+    return segments;
+  };
+
+  const pieSegments = createPieChart(chartData);
+
+  // Create SVG path for pie segment
+  const createArc = (startAngle, endAngle, radius = 100) => {
+    const start = polarToCartesian(120, 120, radius, endAngle);
+    const end = polarToCartesian(120, 120, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+    return [
+      'M', 120, 120,
+      'L', start.x, start.y,
+      'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+      'Z'
+    ].join(' ');
+  };
+
+  const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+    const angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
-      total,
-      genderCounts,
-      relationCounts,
-      meetingCounts,
-      statusCounts,
-      completeProfiles,
-      incompleteProfiles: total - completeProfiles
+      x: centerX + (radius * Math.cos(angleInRadians)),
+      y: centerY + (radius * Math.sin(angleInRadians))
     };
-  }, [contacts, getAllFields]);
-
-  const renderStatCard = (title, value, subtitle = null) => (
-    <div className="stat-card">
-      <div className="stat-card-value">{value}</div>
-      <div className="stat-card-label">{title}</div>
-      {subtitle && <div className="stat-card-subtitle">{subtitle}</div>}
-    </div>
-  );
-
-  const renderBreakdown = (title, counts) => {
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-    
-    return (
-      <div className="stats-breakdown">
-        <h3>{title}</h3>
-        <div className="breakdown-items">
-          {Object.entries(counts).map(([key, count]) => {
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            return (
-              <div key={key} className="breakdown-item">
-                <div className="breakdown-label">
-                  <span className="breakdown-name">{key}</span>
-                  <span className="breakdown-count">{count}</span>
-                </div>
-                <div className="breakdown-bar">
-                  <div 
-                    className="breakdown-bar-fill" 
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <div className="breakdown-percentage">{percentage}%</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   return (
-    <div className="stats-page">
-      <div className="stats-header">
-        <h2>📊 Statistiques</h2>
+    <div className="statistics-page">
+      {/* Header */}
+      <div className="statistics-header">
+        <h1>📊 Statistiques</h1>
+        <p className="statistics-subtitle">
+          Visualisez vos données de contacts
+        </p>
       </div>
 
-      <div className="stats-content">
-        {/* Global Stats */}
-        <div className="stats-cards-grid">
-          {renderStatCard('Total contacts', stats.total)}
-          {renderStatCard('Profils complets', stats.completeProfiles)}
-          {renderStatCard('Profils incomplets', stats.incompleteProfiles)}
+      {/* Summary Cards */}
+      <div className="stats-summary">
+        <div className="stat-card">
+          <div className="stat-icon">👥</div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.total}</div>
+            <div className="stat-label">Total contacts</div>
+          </div>
         </div>
 
-        {/* Detailed Breakdowns */}
-        {stats.total > 0 && (
-          <>
-            {Object.keys(stats.genderCounts).length > 0 && 
-              renderBreakdown('Répartition par sexe', stats.genderCounts)}
-            
-            {Object.keys(stats.relationCounts).length > 0 && 
-              renderBreakdown('Répartition par type de relation', stats.relationCounts)}
-            
-            {Object.keys(stats.meetingCounts).length > 0 && 
-              renderBreakdown('Répartition par lieu de rencontre', stats.meetingCounts)}
-            
-            {Object.keys(stats.statusCounts).length > 0 && 
-              renderBreakdown('Répartition par statut de discussion', stats.statusCounts)}
-          </>
-        )}
-
-        {stats.total === 0 && (
-          <div className="empty-stats">
-            <div className="empty-stats-icon">📊</div>
-            <div className="empty-stats-text">
-              Aucune donnée disponible.<br />
-              Ajoutez des contacts pour voir vos statistiques !
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.complete}</div>
+            <div className="stat-label">Profils complets</div>
           </div>
-        )}
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">⚠️</div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.incomplete}</div>
+            <div className="stat-label">Profils incomplets</div>
+          </div>
+        </div>
       </div>
+
+      {/* Tabs */}
+      {categorizableFields.length > 0 && (
+        <>
+          <div className="stats-tabs">
+            {categorizableFields.map(field => (
+              <button
+                key={field.id}
+                className={`stats-tab ${activeTab === field.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(field.id)}
+              >
+                {field.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Chart Section */}
+          <div className="stats-chart-section">
+            {chartData.length === 0 ? (
+              <div className="no-data">
+                <span className="no-data-icon">📊</span>
+                <p>Aucune donnée disponible pour ce champ</p>
+              </div>
+            ) : (
+              <>
+                {/* Pie Chart */}
+                <div className="pie-chart-container">
+                  <svg viewBox="0 0 240 240" className="pie-chart">
+                    {pieSegments.map((segment, index) => (
+                      <path
+                        key={index}
+                        d={createArc(segment.startAngle, segment.endAngle)}
+                        fill={segment.color}
+                        className="pie-segment"
+                      />
+                    ))}
+                    {/* Center circle for donut effect */}
+                    <circle cx="120" cy="120" r="60" fill="var(--surface)" />
+                    <text
+                      x="120"
+                      y="115"
+                      textAnchor="middle"
+                      fontSize="28"
+                      fontWeight="700"
+                      fill="var(--text-primary)"
+                    >
+                      {totalDefined}
+                    </text>
+                    <text
+                      x="120"
+                      y="135"
+                      textAnchor="middle"
+                      fontSize="14"
+                      fill="var(--text-secondary)"
+                    >
+                      contacts
+                    </text>
+                  </svg>
+                </div>
+
+                {/* Legend */}
+                <div className="chart-legend">
+                  {chartData.map((item, index) => (
+                    <div key={index} className="legend-item">
+                      <div 
+                        className="legend-color" 
+                        style={{ backgroundColor: colors[index % colors.length] }}
+                      ></div>
+                      <div className="legend-info">
+                        <span className="legend-label">{item.label}</span>
+                        <span className="legend-value">
+                          {item.count} ({item.percentage}%)
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
-export default StatsPage;
+export default StatisticsPage;
