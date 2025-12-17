@@ -154,45 +154,6 @@ const ContactModal = ({ contact, onClose }) => {
     const hasError = errors[field.id];
     const options = getFieldOptions(field);
 
-    // Special handling for firstName and instagram - swap order
-    if (field.id === 'firstName') {
-      return (
-        <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            type="text"
-            className="form-input"
-            value={value}
-            onChange={(e) => handleChange(field.id, e.target.value)}
-            placeholder={field.label}
-          />
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
-
-    if (field.id === 'instagram') {
-      return (
-        <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            type="text"
-            className="form-input"
-            value={value}
-            onChange={(e) => handleChange(field.id, e.target.value)}
-            placeholder={field.label}
-          />
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
-
     // Special handling for birthDate - 3 separate selects
     if (field.id === 'birthDate') {
       const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -364,7 +325,7 @@ const ContactModal = ({ contact, onClose }) => {
     }
   };
 
-  // Reorder fields: firstName first, instagram second
+  // Reorder fields: firstName first, instagram second, then others
   const reorderedFields = [...allFields].sort((a, b) => {
     if (a.id === 'firstName') return -1;
     if (b.id === 'firstName') return 1;
