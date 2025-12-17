@@ -22,6 +22,20 @@ export const useApp = () => {
 
 const DEFAULT_FIELDS = [
   {
+    id: 'firstName',
+    type: 'text',
+    label: 'Prénom',
+    required: true,
+    order: -2
+  },
+  {
+    id: 'instagram',
+    type: 'text',
+    label: 'Instagram',
+    required: false,
+    order: -1
+  },
+  {
     id: 'relationType',
     type: 'select',
     label: 'Type de relation',
@@ -55,25 +69,24 @@ const DEFAULT_FIELDS = [
   },
   {
     id: 'location',
-    type: 'city',
+    type: 'text',
     label: 'Localisation',
     required: false,
     order: 4
   },
   {
-    id: 'birthYear',
-    type: 'year',
-    label: 'Année de naissance',
+    id: 'birthDate',
+    type: 'date',
+    label: 'Anniversaire',
     required: false,
     order: 5
   },
   {
-    id: 'birthday',
+    id: 'nextMeeting',
     type: 'date',
-    label: 'Date d\'anniversaire',
+    label: 'Prochain RDV',
     required: false,
-    order: 6,
-    futureOnly: false
+    order: 6
   },
   {
     id: 'notes',
@@ -81,14 +94,6 @@ const DEFAULT_FIELDS = [
     label: 'Notes personnelles',
     required: false,
     order: 7
-  },
-  {
-    id: 'meetingDate',
-    type: 'date',
-    label: 'RDV',
-    required: false,
-    order: 8,
-    futureOnly: true
   }
 ];
 
