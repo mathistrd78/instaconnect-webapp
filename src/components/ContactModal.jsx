@@ -12,6 +12,7 @@ const ContactModal = ({ contact, onClose }) => {
     birthDay: '',
     birthMonth: '',
     birthYear: '',
+    nextMeeting: '',
     isFavorite: false,
     ...contact
   });
@@ -63,6 +64,12 @@ const ContactModal = ({ contact, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
     
+    // Check required core fields
+    if (!formData.firstName) {
+      newErrors.firstName = 'Prénom est requis';
+    }
+    
+    // Check other required fields
     allFields.forEach(field => {
       if (field.required && !formData[field.id]) {
         newErrors[field.id] = `${field.label} est requis`;
@@ -149,37 +156,51 @@ const ContactModal = ({ contact, onClose }) => {
     return uniqueTags;
   };
 
-  const renderField = (field) => {
-    const value = formData[field.id] || '';
-    const hasError = errors[field.id];
-    const options = getFieldOptions(field);
-
-    // Special handling for birthDate - 3 separate selects
-    if (field.id === 'birthDate') {
-      const days = Array.from({ length: 31 }, (_, i) => i + 1);
-      const months = [
-        { value: '1', label: 'Janvier' },
-        { value: '2', label: 'Février' },
-        { value: '3', label: 'Mars' },
-        { value: '4', label: 'Avril' },
-        { value: '5', label: 'Mai' },
-        { value: '6', label: 'Juin' },
-        { value: '7', label: 'Juillet' },
-        { value: '8', label: 'Août' },
-        { value: '9', label: 'Septembre' },
-        { value: '10', label: 'Octobre' },
-        { value: '11', label: 'Novembre' },
-        { value: '12', label: 'Décembre' }
-      ];
-      const currentYear = new Date().getFullYear();
-      const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-
-      return (
-        <div key={field.id} className="form-group">
+  const renderCoreFields = () => {
+    return (
+      <>
+        {/* Prénom */}
+        <div className={`form-group ${errors.firstName ? 'error' : ''}`}>
           <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
+            Prénom <span className="required">*</span>
           </label>
+          <input
+            type="text"
+            className="form-input"
+            value={formData.firstName || ''}
+            onChange={(e) => handleChange('firstName', e.target.value)}
+            placeholder="Prénom"
+          />
+          {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+        </div>
+
+        {/* Instagram */}
+        <div className="form-group">
+          <label className="form-label">Instagram</label>
+          <input
+            type="text"
+            className="form-input"
+            value={formData.instagram || ''}
+            onChange={(e) => handleChange('instagram', e.target.value)}
+            placeholder="@username"
+          />
+        </div>
+
+        {/* Localisation */}
+        <div className="form-group">
+          <label className="form-label">Localisation</label>
+          <input
+            type="text"
+            className="form-input"
+            value={formData.location || ''}
+            onChange={(e) => handleChange('location', e.target.value)}
+            placeholder="Ville, Pays"
+          />
+        </div>
+
+        {/* Anniversaire - 3 selects */}
+        <div className="form-group">
+          <label className="form-label">Anniversaire</label>
           <div className="birth-date-container">
             <select
               className="form-select birth-select"
@@ -187,7 +208,7 @@ const ContactModal = ({ contact, onClose }) => {
               onChange={(e) => handleChange('birthDay', e.target.value)}
             >
               <option value="">Jour</option>
-              {days.map(day => (
+              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                 <option key={day} value={day}>{day}</option>
               ))}
             </select>
@@ -197,7 +218,20 @@ const ContactModal = ({ contact, onClose }) => {
               onChange={(e) => handleChange('birthMonth', e.target.value)}
             >
               <option value="">Mois</option>
-              {months.map(month => (
+              {[
+                { value: '1', label: 'Janvier' },
+                { value: '2', label: 'Février' },
+                { value: '3', label: 'Mars' },
+                { value: '4', label: 'Avril' },
+                { value: '5', label: 'Mai' },
+                { value: '6', label: 'Juin' },
+                { value: '7', label: 'Juillet' },
+                { value: '8', label: 'Août' },
+                { value: '9', label: 'Septembre' },
+                { value: '10', label: 'Octobre' },
+                { value: '11', label: 'Novembre' },
+                { value: '12', label: 'Décembre' }
+              ].map(month => (
                 <option key={month.value} value={month.value}>{month.label}</option>
               ))}
             </select>
@@ -207,15 +241,36 @@ const ContactModal = ({ contact, onClose }) => {
               onChange={(e) => handleChange('birthYear', e.target.value)}
             >
               <option value="">Année</option>
-              {years.map(year => (
+              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
           </div>
-          {hasError && <span className="error-message">{hasError}</span>}
         </div>
-      );
+
+        {/* RDV */}
+        <div className="form-group">
+          <label className="form-label">Prochain RDV</label>
+          <input
+            type="date"
+            className="form-input"
+            value={formData.nextMeeting ? formData.nextMeeting.split('T')[0] : ''}
+            onChange={(e) => handleChange('nextMeeting', e.target.value ? new Date(e.target.value).toISOString() : '')}
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderField = (field) => {
+    // Skip core fields as they're rendered separately
+    if (['firstName', 'instagram', 'location', 'birthDate', 'nextMeeting'].includes(field.id)) {
+      return null;
     }
+
+    const value = formData[field.id] || '';
+    const hasError = errors[field.id];
+    const options = getFieldOptions(field);
 
     switch (field.type) {
       case 'text':
@@ -325,15 +380,6 @@ const ContactModal = ({ contact, onClose }) => {
     }
   };
 
-  // Reorder fields: firstName first, instagram second, then others
-  const reorderedFields = [...allFields].sort((a, b) => {
-    if (a.id === 'firstName') return -1;
-    if (b.id === 'firstName') return 1;
-    if (a.id === 'instagram') return -1;
-    if (b.id === 'instagram') return 1;
-    return 0;
-  });
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -343,7 +389,11 @@ const ContactModal = ({ contact, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {reorderedFields.map(field => renderField(field))}
+          {/* Core fields first */}
+          {renderCoreFields()}
+          
+          {/* Then other fields */}
+          {allFields.map(field => renderField(field))}
 
           <div className="modal-actions">
             <button type="submit" className="btn-primary">
