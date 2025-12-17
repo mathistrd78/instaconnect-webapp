@@ -1,76 +1,72 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/Profile.css';
 
 const ProfilePage = () => {
-  const { currentUser, logout } = useAuth();
-  const { contacts, darkMode, toggleDarkMode } = useApp();
+  const { darkMode, toggleDarkMode, contacts } = useApp();
+  const { currentUser } = useAuth();
 
-  const handleLogout = async () => {
-    await logout();
+  const stats = {
+    totalContacts: contacts.length,
+    createdDate: currentUser?.metadata?.creationTime 
+      ? new Date(currentUser.metadata.creationTime).toLocaleDateString('fr-FR')
+      : 'N/A'
   };
 
   return (
     <div className="profile-page">
       <div className="profile-header">
-        <h2>⚙️ Profil</h2>
+        <h1>⚙️ Paramètres</h1>
       </div>
 
       <div className="profile-content">
         {/* User Info */}
         <div className="profile-section">
-          <div className="profile-section-title">Informations utilisateur</div>
-          <div className="profile-info-card">
-            <div className="profile-avatar">👤</div>
-            <div className="profile-email">{currentUser?.email}</div>
-          </div>
-        </div>
-
-        {/* Statistics */}
-        <div className="profile-section">
-          <div className="profile-section-title">Mes statistiques</div>
-          <div className="profile-stats-grid">
-            <div className="profile-stat-item">
-              <div className="profile-stat-value">{contacts.length}</div>
-              <div className="profile-stat-label">Contacts</div>
+          <h2>👤 Informations du compte</h2>
+          <div className="profile-info">
+            <div className="info-item">
+              <span className="info-label">Email</span>
+              <span className="info-value">{currentUser?.email}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Compte créé le</span>
+              <span className="info-value">{stats.createdDate}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Total contacts</span>
+              <span className="info-value">{stats.totalContacts}</span>
             </div>
           </div>
         </div>
 
-        {/* Settings */}
+        {/* Appearance Settings */}
         <div className="profile-section">
-          <div className="profile-section-title">Paramètres</div>
-          
-          <div className="profile-setting-item">
-            <div className="profile-setting-label">
-              <span className="profile-setting-icon">🌙</span>
-              <span>Mode sombre</span>
+          <h2>🎨 Apparence</h2>
+          <div className="setting-item">
+            <div className="setting-info">
+              <div className="setting-label">Mode sombre</div>
+              <div className="setting-description">
+                {darkMode ? 'Activé' : 'Désactivé'}
+              </div>
             </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
+            <label className="switch">
+              <input 
+                type="checkbox" 
                 checked={darkMode}
                 onChange={toggleDarkMode}
               />
-              <span className="toggle-slider"></span>
+              <span className="slider"></span>
             </label>
           </div>
         </div>
 
-        {/* Logout Button */}
+        {/* About */}
         <div className="profile-section">
-          <button className="profile-logout-btn" onClick={handleLogout}>
-            🚪 Déconnexion
-          </button>
-        </div>
-
-        {/* App Info */}
-        <div className="profile-footer">
-          <div className="profile-app-name">InstaConnect</div>
-          <div className="profile-app-version">Version 2.0.0</div>
-          <div className="profile-app-description">
-            Votre CRM Instagram professionnel
+          <h2>ℹ️ À propos</h2>
+          <div className="about-info">
+            <p><strong>InstaConnect</strong> v2.0.0</p>
+            <p>Votre CRM Instagram professionnel</p>
           </div>
         </div>
       </div>
