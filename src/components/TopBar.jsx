@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import '../styles/TopBar.css';
 
 const TopBar = () => {
+  const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useApp();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -42,6 +44,15 @@ const TopBar = () => {
           title={darkMode ? 'Mode clair' : 'Mode sombre'}
         >
           {darkMode ? '☀️' : '🌙'}
+        </button>
+
+        {/* Nouvelle Analyse Button */}
+        <button
+          className="topbar-btn-analyse"
+          onClick={() => navigate('/app/analyse')}
+          title="Nouvelle analyse Instagram"
+        >
+          🔍 Nouvelle Analyse
         </button>
 
         {/* User Menu */}
