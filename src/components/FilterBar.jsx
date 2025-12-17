@@ -87,19 +87,25 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return allTags;
   };
 
-  const toggleFilter = (e, fieldId, value) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const toggleFilter = (fieldId, value) => {
     const current = activeFilters[fieldId] || [];
     const newFilters = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
     
-    onFilterChange({
+    const updatedFilters = {
       ...activeFilters,
       [fieldId]: newFilters.length > 0 ? newFilters : undefined
+    };
+    
+    // Remove undefined values
+    Object.keys(updatedFilters).forEach(key => {
+      if (updatedFilters[key] === undefined) {
+        delete updatedFilters[key];
+      }
     });
+    
+    onFilterChange(updatedFilters);
   };
 
   const clearFilters = () => {
@@ -122,7 +128,10 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
           <div key={field.id} className="filter-dropdown">
             <button
               className={`filter-btn ${activeCount > 0 ? 'active' : ''}`}
-              onClick={() => setOpenDropdown(isOpen ? null : field.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenDropdown(isOpen ? null : field.id);
+              }}
             >
               {field.label}
               {activeCount > 0 && <span className="filter-count">{activeCount}</span>}
@@ -130,27 +139,32 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
             </button>
 
             {isOpen && (
-              <div className="filter-dropdown-menu">
+              <div className="filter-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                 {fieldOptions.length === 0 ? (
                   <div className="filter-empty">Aucune option disponible</div>
                 ) : (
                   fieldOptions.map(option => {
                     const optionValue = option.value || option;
                     const optionLabel = option.label || option;
+                    const isChecked = activeFilters[field.id]?.includes(optionValue) || false;
                     
                     return (
-                      <label 
+                      <div 
                         key={optionValue} 
                         className="filter-option"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFilter(field.id, optionValue);
+                        }}
                       >
                         <input
                           type="checkbox"
-                          checked={activeFilters[field.id]?.includes(optionValue) || false}
-                          onChange={(e) => toggleFilter(e, field.id, optionValue)}
+                          checked={isChecked}
+                          onChange={() => {}} // Controlled by parent onClick
                           onClick={(e) => e.stopPropagation()}
                         />
                         <span>{optionLabel}</span>
-                      </label>
+                      </div>
                     );
                   })
                 )}
