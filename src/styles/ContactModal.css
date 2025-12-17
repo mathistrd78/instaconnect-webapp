@@ -1,407 +1,252 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import '../styles/ContactModal.css';
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
 
-const ContactModal = ({ contact, onClose }) => {
-  const { addContact, updateContact, deleteContact, getAllFields, customTags } = useApp();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    instagram: '',
-    notes: '',
-    location: '',
-    birthDay: '',
-    birthMonth: '',
-    birthYear: '',
-    isFavorite: false,
-    ...contact
-  });
+.modal-content {
+  background: var(--surface);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
 
-  const [errors, setErrors] = useState({});
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 10;
+}
 
-  useEffect(() => {
-    if (contact) {
-      // Parse existing birthDate if present
-      if (contact.birthDate) {
-        const date = new Date(contact.birthDate);
-        setFormData(prev => ({
-          ...prev,
-          birthDay: date.getDate().toString(),
-          birthMonth: (date.getMonth() + 1).toString(),
-          birthYear: date.getFullYear().toString()
-        }));
-      }
+.modal-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
-      // Handle location object
-      if (contact.location && typeof contact.location === 'object') {
-        setFormData(prev => ({
-          ...prev,
-          location: contact.location.displayName || 
-                   `${contact.location.city || ''}, ${contact.location.country || ''}`.trim()
-        }));
-      }
-    }
-  }, [contact]);
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border-color);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  const allFields = getAllFields();
+.modal-close:hover {
+  background: var(--text-secondary);
+  color: white;
+}
 
-  const handleChange = (fieldId, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
-    
-    // Clear error for this field
-    if (errors[fieldId]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldId];
-        return newErrors;
-      });
-    }
-  };
+.modal-form {
+  padding: 32px;
+}
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    allFields.forEach(field => {
-      if (field.required && !formData[field.id]) {
-        newErrors[field.id] = `${field.label} est requis`;
-      }
-    });
+.form-group {
+  margin-bottom: 24px;
+}
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+.required {
+  color: #dc3545;
+  margin-left: 4px;
+}
 
-    // Build birthDate from day/month/year if at least one is present
-    let birthDate = null;
-    if (formData.birthYear || formData.birthMonth || formData.birthDay) {
-      const year = formData.birthYear || '2000';
-      const month = formData.birthMonth || '1';
-      const day = formData.birthDay || '1';
-      birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
-    }
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--background);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
 
-    const dataToSave = {
-      ...formData,
-      birthDate,
-      location: formData.location || null,
-      updatedAt: new Date().toISOString()
-    };
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #E1306C;
+}
 
-    // Remove temporary fields
-    delete dataToSave.birthDay;
-    delete dataToSave.birthMonth;
-    delete dataToSave.birthYear;
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
 
-    if (contact?.id) {
-      await updateContact(contact.id, dataToSave);
-    } else {
-      await addContact({
-        ...dataToSave,
-        createdAt: new Date().toISOString()
-      });
-    }
-    
-    onClose();
-  };
+.form-group.error .form-input,
+.form-group.error .form-textarea,
+.form-group.error .form-select {
+  border-color: #dc3545;
+}
 
-  const handleDelete = async () => {
-    if (window.confirm(`Supprimer ${formData.firstName || 'ce contact'} ?`)) {
-      await deleteContact(contact.id);
-      onClose();
-    }
-  };
+.error-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #dc3545;
+}
 
-  const getFieldOptions = (field) => {
-    // Get custom tags for this field
-    const customFieldTags = customTags[field.id] || [];
-    
-    // For radio fields, use options
-    if (field.type === 'radio' && field.options) {
-      const allOptions = [...field.options, ...customFieldTags.map(t => t.value || t)];
-      // Remove duplicates
-      return [...new Set(allOptions)];
-    }
-    
-    // For select fields, use tags
-    const allTags = [...(field.tags || []), ...customFieldTags];
-    
-    // Remove duplicates based on value
-    const uniqueTags = [];
-    const seenValues = new Set();
-    
-    allTags.forEach(tag => {
-      const value = tag.value || tag;
-      if (!seenValues.has(value)) {
-        seenValues.add(value);
-        uniqueTags.push(tag);
-      }
-    });
-    
-    return uniqueTags;
-  };
+/* Birth Date Container */
+.birth-date-container {
+  display: flex;
+  gap: 12px;
+}
 
-  const renderField = (field) => {
-    const value = formData[field.id] || '';
-    const hasError = errors[field.id];
-    const options = getFieldOptions(field);
+.birth-select {
+  flex: 1;
+}
 
-    // Special handling for firstName and instagram - swap order
-    if (field.id === 'firstName') {
-      return (
-        <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            type="text"
-            className="form-input"
-            value={value}
-            onChange={(e) => handleChange(field.id, e.target.value)}
-            placeholder={field.label}
-          />
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
+/* Radio Group */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-    if (field.id === 'instagram') {
-      return (
-        <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            type="text"
-            className="form-input"
-            value={value}
-            onChange={(e) => handleChange(field.id, e.target.value)}
-            placeholder={field.label}
-          />
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
 
-    // Special handling for birthDate - 3 separate selects
-    if (field.id === 'birthDate') {
-      const days = Array.from({ length: 31 }, (_, i) => i + 1);
-      const months = [
-        { value: '1', label: 'Janvier' },
-        { value: '2', label: 'Février' },
-        { value: '3', label: 'Mars' },
-        { value: '4', label: 'Avril' },
-        { value: '5', label: 'Mai' },
-        { value: '6', label: 'Juin' },
-        { value: '7', label: 'Juillet' },
-        { value: '8', label: 'Août' },
-        { value: '9', label: 'Septembre' },
-        { value: '10', label: 'Octobre' },
-        { value: '11', label: 'Novembre' },
-        { value: '12', label: 'Décembre' }
-      ];
-      const currentYear = new Date().getFullYear();
-      const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+.radio-label:hover {
+  background: var(--border-color);
+}
 
-      return (
-        <div key={field.id} className="form-group">
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <div className="birth-date-container">
-            <select
-              className="form-select birth-select"
-              value={formData.birthDay || ''}
-              onChange={(e) => handleChange('birthDay', e.target.value)}
-            >
-              <option value="">Jour</option>
-              {days.map(day => (
-                <option key={day} value={day}>{day}</option>
-              ))}
-            </select>
-            <select
-              className="form-select birth-select"
-              value={formData.birthMonth || ''}
-              onChange={(e) => handleChange('birthMonth', e.target.value)}
-            >
-              <option value="">Mois</option>
-              {months.map(month => (
-                <option key={month.value} value={month.value}>{month.label}</option>
-              ))}
-            </select>
-            <select
-              className="form-select birth-select"
-              value={formData.birthYear || ''}
-              onChange={(e) => handleChange('birthYear', e.target.value)}
-            >
-              <option value="">Année</option>
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
+.radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #E1306C;
+}
 
-    switch (field.type) {
-      case 'text':
-        return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <input
-              type="text"
-              className="form-input"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-              placeholder={field.label}
-            />
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
-        );
+.radio-label span {
+  font-size: 15px;
+  color: var(--text-primary);
+}
 
-      case 'textarea':
-        return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <textarea
-              className="form-textarea"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-              placeholder={field.label}
-              rows={4}
-            />
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
-        );
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
 
-      case 'select':
-        return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <select
-              className="form-select"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-            >
-              <option value="">Sélectionner...</option>
-              {options.map(option => {
-                const optionValue = option.value || option;
-                const optionLabel = option.label || option;
-                return (
-                  <option key={optionValue} value={optionValue}>
-                    {optionLabel}
-                  </option>
-                );
-              })}
-            </select>
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
-        );
+.checkbox-label:hover {
+  background: var(--border-color);
+}
 
-      case 'radio':
-        return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <div className="radio-group">
-              {options.map(option => (
-                <label key={option} className="radio-label">
-                  <input
-                    type="radio"
-                    name={field.id}
-                    value={option}
-                    checked={value === option}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
-        );
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #E1306C;
+}
 
-      case 'checkbox':
-        return (
-          <div key={field.id} className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={!!value}
-                onChange={(e) => handleChange(field.id, e.target.checked)}
-              />
-              <span>{field.label}</span>
-            </label>
-          </div>
-        );
+.checkbox-label span {
+  font-size: 15px;
+  color: var(--text-primary);
+}
 
-      default:
-        return null;
-    }
-  };
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
 
-  // Reorder fields: firstName first, instagram second
-  const reorderedFields = [...allFields].sort((a, b) => {
-    if (a.id === 'firstName') return -1;
-    if (b.id === 'firstName') return 1;
-    if (a.id === 'instagram') return -1;
-    if (b.id === 'instagram') return 1;
-    return 0;
-  });
+.btn-primary {
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{contact ? 'Modifier le contact' : 'Nouveau contact'}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {reorderedFields.map(field => renderField(field))}
+.btn-delete {
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-          <div className="modal-actions">
-            <button type="submit" className="btn-primary">
-              {contact ? 'Modifier' : 'Créer'}
-            </button>
-            {contact && (
-              <button 
-                type="button" 
-                className="btn-delete" 
-                onClick={handleDelete}
-              >
-                🗑️ Supprimer
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+.btn-delete:hover {
+  background: #dc3545;
+  color: white;
+}
 
-export default ContactModal;
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header,
+  .modal-form {
+    padding: 20px;
+  }
+
+  .birth-date-container {
+    flex-direction: column;
+  }
+}
