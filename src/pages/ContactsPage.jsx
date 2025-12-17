@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState';
 import '../styles/Contacts.css';
 
 const ContactsPage = () => {
-  const { contacts } = useApp();
+  const { contacts, getAllFields } = useApp();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
@@ -30,6 +30,16 @@ const ContactsPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Check if contact is complete
+  const isContactComplete = (contact) => {
+    const allFields = getAllFields();
+    const requiredFields = allFields.filter(f => f.required);
+    return requiredFields.every(field => {
+      const value = contact[field.id];
+      return value !== undefined && value !== null && value !== '';
+    });
+  };
+
   useEffect(() => {
     // Apply filters and search
     let filtered = [...contacts];
@@ -46,9 +56,38 @@ const ContactsPage = () => {
     // Apply active filters
     Object.keys(activeFilters).forEach(filterKey => {
       if (activeFilters[filterKey] && activeFilters[filterKey].length > 0) {
-        filtered = filtered.filter(contact =>
-          activeFilters[filterKey].includes(contact[filterKey])
-        );
+        filtered = filtered.filter(contact => {
+          // Special filter: isFavorite
+          if (filterKey === 'isFavorite') {
+            return contact.isFavorite === true;
+          }
+          
+          // Special filter: isComplete
+          if (filterKey === 'isComplete') {
+            const isComplete = isContactComplete(contact);
+            return activeFilters[filterKey].some(value => {
+              if (value === 'true') return isComplete;
+              if (value === 'false') return !isComplete;
+              return false;
+            });
+          }
+          
+          // Special filter: country
+          if (filterKey === 'country') {
+            let contactCountry = '';
+            if (contact.location) {
+              if (typeof contact.location === 'object' && contact.location.country) {
+                contactCountry = contact.location.country;
+              } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+                contactCountry = contact.location.split(',').pop().trim();
+              }
+            }
+            return activeFilters[filterKey].includes(contactCountry);
+          }
+          
+          // Regular filters
+          return activeFilters[filterKey].includes(contact[filterKey]);
+        });
       }
     });
 
@@ -60,7 +99,7 @@ const ContactsPage = () => {
     });
 
     setFilteredContacts(filtered);
-  }, [contacts, searchQuery, activeFilters]);
+  }, [contacts, searchQuery, activeFilters, getAllFields]);
 
   // Group contacts by first letter (ignore @ for Instagram usernames)
   const groupedContacts = useMemo(() => {
