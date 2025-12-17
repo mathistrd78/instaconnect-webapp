@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import '../styles/Statistics.css';
+import '../styles/Stats.css';
 
-const StatisticsPage = () => {
+const StatsPage = () => {
   const { contacts, getAllFields } = useApp();
   const [activeTab, setActiveTab] = useState('relationType');
 
@@ -133,11 +133,11 @@ const StatisticsPage = () => {
   };
 
   return (
-    <div className="statistics-page">
+    <div className="stats-page">
       {/* Header */}
-      <div className="statistics-header">
+      <div className="stats-header">
         <h1>📊 Statistiques</h1>
-        <p className="statistics-subtitle">
+        <p className="stats-subtitle">
           Visualisez vos données de contacts
         </p>
       </div>
@@ -254,4 +254,4 @@ const StatisticsPage = () => {
   );
 };
 
-export default StatisticsPage;
+export default StatsPage;
