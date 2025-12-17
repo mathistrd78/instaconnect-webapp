@@ -16,7 +16,8 @@
 
 .contact-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -48,6 +49,30 @@
 .contact-instagram:hover {
   text-decoration: underline;
   opacity: 0.8;
+}
+
+.favorite-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.favorite-btn:hover {
+  background: rgba(225, 48, 108, 0.1);
+  transform: scale(1.1);
+}
+
+.favorite-btn.active {
+  color: #FFD700;
 }
 
 .contact-card-body {
