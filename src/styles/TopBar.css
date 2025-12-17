@@ -1,6 +1,10 @@
 /* TopBar.css */
 
 .topbar {
+  position: fixed;
+  top: 0;
+  left: 260px; /* After sidebar */
+  right: 0;
   height: 70px;
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
@@ -9,6 +13,7 @@
   justify-content: space-between;
   padding: 0 32px;
   gap: 24px;
+  z-index: 100;
 }
 
 .topbar-title {
@@ -180,6 +185,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .topbar {
+    left: 80px; /* Sidebar réduite */
     padding: 0 16px;
   }
   
