@@ -250,6 +250,7 @@ const ContactModal = ({ contact, onClose }) => {
               value={value}
               onChange={(e) => handleChange(field.id, e.target.value)}
               placeholder={field.label}
+              disabled={field.id === 'instagram'}
             />
             {hasError && <span className="error-message">{hasError}</span>}
           </div>
