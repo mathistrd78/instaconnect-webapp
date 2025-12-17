@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useApp } from '../contexts/AppContext';
 import '../styles/TopBar.css';
 
 const TopBar = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const { darkMode, toggleDarkMode } = useApp();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -37,15 +35,6 @@ const TopBar = () => {
 
       {/* Actions */}
       <div className="topbar-actions">
-        {/* Dark Mode Toggle */}
-        <button
-          className="topbar-btn"
-          onClick={toggleDarkMode}
-          title={darkMode ? 'Mode clair' : 'Mode sombre'}
-        >
-          {darkMode ? '☀️' : '🌙'}
-        </button>
-
         {/* Nouvelle Analyse Button */}
         <button
           className="topbar-btn-analyse"
