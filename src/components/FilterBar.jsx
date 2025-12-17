@@ -209,33 +209,3 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 };
 
 export default FilterBar;
-```
-
----
-
-## ✅ Changements clés
-
-**Problème 1 : Sélection aléatoire**
-- ✅ Remplacé `onClick` par `onMouseDown` (plus fiable)
-- ✅ Ajouté `e.preventDefault()` pour empêcher comportements par défaut
-- ✅ Input en `readOnly` au lieu de `onChange`
-- ✅ Ajouté `type="button"` sur les boutons
-
-**Problème 2 : Doublons**
-- ✅ Fonction de dédoublonnage basée sur `value`
-- ✅ Utilise un `Set` pour tracker les valeurs déjà vues
-- ✅ Ne garde que la première occurrence
-
-**Debug**
-- ✅ Ajout de `console.log` pour voir ce qui se passe
-
----
-
-## 🧪 Test après le push
-
-1. Ouvrez la console (F12)
-2. Cliquez sur une option
-3. Vous devriez voir :
-```
-   Toggle filter: relationType "Ami"
-   Updated filters: {relationType: ["Ami"]}
