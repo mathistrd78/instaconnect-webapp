@@ -8,7 +8,6 @@ const Sidebar = () => {
 
   const navItems = [
     { id: 'contacts', icon: '👥', label: 'Contacts', path: '/app/contacts' },
-    { id: 'analyse', icon: '🔍', label: 'Analyse', path: '/app/analyse' },
     { id: 'calendar', icon: '📅', label: 'Calendrier', path: '/app/calendar' },
     { id: 'stats', icon: '📊', label: 'Statistiques', path: '/app/stats' },
     { id: 'tags', icon: '🏷️', label: 'Tags', path: '/app/tags' },
