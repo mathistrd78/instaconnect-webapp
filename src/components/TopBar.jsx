@@ -27,15 +27,8 @@ const TopBar = () => {
 
   return (
     <div className="topbar">
-      {/* Logo Title */}
-      <div className="topbar-title">
-        <span className="topbar-logo-icon">📱</span>
-        <span className="topbar-logo-text">InstaConnect</span>
-      </div>
-
-      {/* Actions */}
-      <div className="topbar-actions">
-        {/* Nouvelle Analyse Button */}
+      {/* Left: Nouvelle Analyse Button */}
+      <div className="topbar-left">
         <button
           className="topbar-btn-analyse"
           onClick={() => navigate('/app/analyse')}
@@ -43,8 +36,15 @@ const TopBar = () => {
         >
           🔍 Nouvelle Analyse
         </button>
+      </div>
 
-        {/* User Menu */}
+      {/* Center: Logo Title */}
+      <div className="topbar-center">
+        <span className="topbar-logo-text">InstaConnect</span>
+      </div>
+
+      {/* Right: User Menu */}
+      <div className="topbar-right">
         <div className="topbar-user" ref={menuRef}>
           <button
             className="topbar-user-btn"
