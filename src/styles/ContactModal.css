@@ -101,6 +101,15 @@
   border-color: #E1306C;
 }
 
+.form-input:disabled,
+.form-textarea:disabled,
+.form-select:disabled {
+  background: var(--border-color);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 100px;
