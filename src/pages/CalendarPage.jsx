@@ -6,96 +6,53 @@ import '../styles/Calendar.css';
 const CalendarPage = () => {
   const { contacts } = useApp();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Get contacts with meetings
-  const contactsWithMeetings = useMemo(() => {
-    return contacts.filter(contact => contact.nextMeeting);
+  const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+  // Get meetings by date
+  const meetingsByDate = useMemo(() => {
+    const meetings = {};
+    contacts.forEach(contact => {
+      if (contact.nextMeeting) {
+        const date = new Date(contact.nextMeeting).toISOString().split('T')[0];
+        if (!meetings[date]) {
+          meetings[date] = [];
+        }
+        meetings[date].push(contact);
+      }
+    });
+    return meetings;
   }, [contacts]);
 
-  // Get meetings for a specific date
-  const getMeetingsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return contactsWithMeetings.filter(contact => {
-      if (!contact.nextMeeting) return false;
-      const meetingDate = new Date(contact.nextMeeting).toISOString().split('T')[0];
-      return meetingDate === dateStr;
-    });
-  };
+  // Calendar data
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
+  const adjustedStartDay = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
 
-  // Get meetings for selected date
-  const selectedDateMeetings = useMemo(() => {
-    return getMeetingsForDate(selectedDate);
-  }, [selectedDate, contactsWithMeetings]);
-
-  // Generate calendar days
-  const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-    
-    // Previous month days
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push({ day: null, date: null });
-    }
-
-    // Current month days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const meetings = getMeetingsForDate(date);
-      days.push({
-        day,
-        date,
-        hasMeeting: meetings.length > 0,
-        meetingCount: meetings.length
-      });
-    }
-
-    return days;
-  }, [currentDate, contactsWithMeetings]);
-
-  const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    setCurrentDate(new Date(year, month - 1, 1));
+    setSelectedDate(null);
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    setCurrentDate(new Date(year, month + 1, 1));
+    setSelectedDate(null);
   };
 
-  const isToday = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
-
-  const isSelectedDate = (date) => {
-    if (!date) return false;
-    return date.toDateString() === selectedDate.toDateString();
-  };
-
-  const isPastDate = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date < today;
-  };
-
-  const handleDayClick = (date) => {
-    if (date) {
-      setSelectedDate(date);
-    }
+  const selectDate = (day) => {
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setSelectedDate(dateString);
   };
 
   const handleContactClick = (contact) => {
@@ -114,113 +71,131 @@ const CalendarPage = () => {
     return username.startsWith('@') ? username : `@${username}`;
   };
 
+  const renderDays = () => {
+    const days = [];
+
+    // Empty days before month starts
+    for (let i = 0; i < adjustedStartDay; i++) {
+      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDateObj = new Date(year, month, day);
+      currentDateObj.setHours(0, 0, 0, 0);
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      const hasMeeting = meetingsByDate[dateString] && meetingsByDate[dateString].length > 0;
+      const isToday = currentDateObj.getTime() === today.getTime();
+      const isPast = currentDateObj < today;
+      const isSelected = selectedDate === dateString;
+
+      let classes = 'calendar-day';
+      if (hasMeeting) classes += ' has-meeting';
+      if (isToday) classes += ' today';
+      if (isPast) classes += ' past';
+      if (isSelected) classes += ' selected';
+
+      days.push(
+        <div
+          key={day}
+          className={classes}
+          onClick={() => selectDate(day)}
+        >
+          <span className="day-number">{day}</span>
+          {hasMeeting && (
+            <div className="meeting-indicator">
+              {meetingsByDate[dateString].length}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return days;
+  };
+
+  const selectedDateMeetings = selectedDate ? meetingsByDate[selectedDate] || [] : [];
+
   return (
     <div className="calendar-page">
-      <div className="calendar-header">
-        <h1>📅 Calendrier</h1>
+      <div className="calendar-header-page">
+        <h1>📅 Calendrier des rendez-vous</h1>
         <p className="calendar-subtitle">
-          Gérez vos rendez-vous et meetings
+          Gérez vos rendez-vous avec vos contacts
         </p>
       </div>
 
-      <div className="calendar-layout">
-        {/* Left: Calendar */}
-        <div className="calendar-section">
+      <div className="calendar-container">
+        {/* Calendar */}
+        <div className="calendar-widget">
           <div className="calendar-controls">
-            <button className="calendar-btn prev" onClick={previousMonth}>
-              ◀
-            </button>
-            <h2 className="calendar-title">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h2>
-            <button className="calendar-btn next" onClick={nextMonth}>
-              ▶
-            </button>
+            <button className="calendar-nav-btn" onClick={previousMonth}>◀</button>
+            <h3 className="calendar-month-year">{monthNames[month]} {year}</h3>
+            <button className="calendar-nav-btn" onClick={nextMonth}>▶</button>
           </div>
 
           <div className="calendar-grid">
             <div className="calendar-weekdays">
-              {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map(day => (
-                <div key={day} className="weekday">{day}</div>
-              ))}
+              <div className="weekday">Lun</div>
+              <div className="weekday">Mar</div>
+              <div className="weekday">Mer</div>
+              <div className="weekday">Jeu</div>
+              <div className="weekday">Ven</div>
+              <div className="weekday">Sam</div>
+              <div className="weekday">Dim</div>
             </div>
-
             <div className="calendar-days">
-              {calendarDays.map((dayInfo, index) => (
-                <div
-                  key={index}
-                  className={`calendar-day ${!dayInfo.day ? 'empty' : ''} ${
-                    isToday(dayInfo.date) ? 'today' : ''
-                  } ${isSelectedDate(dayInfo.date) ? 'selected' : ''} ${
-                    isPastDate(dayInfo.date) ? 'past' : ''
-                  } ${dayInfo.hasMeeting ? 'has-meeting' : ''}`}
-                  onClick={() => handleDayClick(dayInfo.date)}
-                >
-                  {dayInfo.day && (
-                    <>
-                      <span className="day-number">{dayInfo.day}</span>
-                      {dayInfo.hasMeeting && (
-                        <span className="meeting-dot"></span>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
+              {renderDays()}
             </div>
           </div>
         </div>
 
-        {/* Right: Meetings list */}
-        <div className="meetings-section">
-          <div className="meetings-header">
-            <h3>
-              {selectedDate.toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              })}
-            </h3>
-            <span className="meetings-count">
-              {selectedDateMeetings.length} RDV
-            </span>
-          </div>
-
-          <div className="meetings-list">
-            {selectedDateMeetings.length === 0 ? (
-              <div className="empty-meetings">
-                <span className="empty-icon">📭</span>
-                <p>Aucun rendez-vous ce jour</p>
-              </div>
-            ) : (
-              selectedDateMeetings.map(contact => (
-                <div
-                  key={contact.id}
-                  className="meeting-card"
-                  onClick={() => handleContactClick(contact)}
-                >
-                  <div className="meeting-avatar">
-                    {contact.firstName?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div className="meeting-details">
-                    <div className="meeting-name">
-                      {contact.firstName || 'Sans nom'}
-                    </div>
-                    {contact.instagram && (
-                      <div className="meeting-instagram">
-                        {getInstagramDisplay(contact.instagram)}
-                      </div>
-                    )}
-                    {contact.notes && (
-                      <div className="meeting-notes">
-                        {contact.notes.substring(0, 60)}
-                        {contact.notes.length > 60 && '...'}
-                      </div>
-                    )}
-                  </div>
+        {/* Meetings List */}
+        <div className="meetings-panel">
+          {selectedDate ? (
+            <>
+              <h3 className="meetings-panel-title">
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('fr-FR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </h3>
+              
+              {selectedDateMeetings.length === 0 ? (
+                <div className="no-meetings">
+                  <div className="no-meetings-icon">📭</div>
+                  <p>Aucun rendez-vous ce jour-là</p>
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                <div className="meetings-list">
+                  {selectedDateMeetings.map(contact => (
+                    <div 
+                      key={contact.id} 
+                      className="meeting-item"
+                      onClick={() => handleContactClick(contact)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="meeting-avatar">
+                        {contact.firstName?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div className="meeting-info">
+                        <div className="meeting-name">{contact.firstName}</div>
+                        <div className="meeting-instagram">{getInstagramDisplay(contact.instagram)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="no-date-selected">
+              <div className="no-date-icon">📅</div>
+              <p>Sélectionnez une date pour voir les rendez-vous</p>
+            </div>
+          )}
         </div>
       </div>
 
