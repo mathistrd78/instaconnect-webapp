@@ -1,25 +1,12 @@
 /* Contacts Page - Web Layout */
-
-/* Fixed Header */
-.contacts-header-fixed {
-  position: fixed;
-  top: 70px; /* Height of TopBar */
-  left: 260px; /* Width of Sidebar */
-  right: 0;
-  z-index: 10;
-  background: var(--background);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.contacts-header-content {
-  padding: 24px 32px;
-}
-
 .contacts-page-web {
   padding: 32px;
-  padding-top: 420px; /* Space for fixed header */
   min-height: calc(100vh - 70px);
+  position: relative;
+}
+
+.contacts-header-web {
+  margin-bottom: 32px;
 }
 
 .contacts-header-top {
@@ -156,7 +143,7 @@
 }
 
 .contacts-content-web {
-  margin-top: 0;
+  margin-top: 24px;
 }
 
 /* Grouped contacts with letter dividers */
@@ -170,6 +157,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scroll-margin-top: 100px;
 }
 
 .letter-divider {
@@ -203,16 +191,7 @@
 }
 
 @media (max-width: 768px) {
-  .contacts-header-fixed {
-    left: 80px; /* Sidebar réduite */
-  }
-  
   .contacts-page-web {
-    padding: 16px;
-    padding-top: 380px;
-  }
-  
-  .contacts-header-content {
     padding: 16px;
   }
   
