@@ -37,7 +37,7 @@ const ContactCard = ({ contact, onEdit }) => {
   const handleDelete = async (e) => {
     e.stopPropagation();
     if (window.confirm(`Supprimer ${contact.firstName || 'ce contact'} ?`)) {
-      await deleteDelete(contact.id);
+      await deleteContact(contact.id);
     }
   };
 
@@ -50,8 +50,20 @@ const ContactCard = ({ contact, onEdit }) => {
   const handleInstagramClick = (e) => {
     e.stopPropagation();
     if (contact.instagram) {
-      window.open(`https://instagram.com/${contact.instagram}`, '_blank');
+      // Remove @ if present at the beginning
+      const username = contact.instagram.startsWith('@') 
+        ? contact.instagram.substring(1) 
+        : contact.instagram;
+      window.open(`https://instagram.com/${username}`, '_blank');
     }
+  };
+
+  // Format Instagram username (remove @ if present)
+  const getInstagramDisplay = () => {
+    if (!contact.instagram) return null;
+    return contact.instagram.startsWith('@') 
+      ? contact.instagram 
+      : `@${contact.instagram}`;
   };
 
   return (
@@ -65,7 +77,7 @@ const ContactCard = ({ contact, onEdit }) => {
               onClick={handleInstagramClick}
               title="Ouvrir le profil Instagram"
             >
-              @{contact.instagram}
+              {getInstagramDisplay()}
             </div>
           )}
         </div>
