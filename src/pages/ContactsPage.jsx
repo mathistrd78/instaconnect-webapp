@@ -13,7 +13,22 @@ const ContactsPage = () => {
   const [activeFilters, setActiveFilters] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const letterRefs = useRef({});
+  const headerRef = useRef(null);
+
+  // Detect scroll to show/hide scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        const headerBottom = headerRef.current.getBoundingClientRect().bottom;
+        setShowScrollTop(headerBottom < 0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     // Apply filters and search
@@ -80,6 +95,10 @@ const ContactsPage = () => {
     }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleEditContact = (contact) => {
     setEditingContact(contact);
     setShowModal(true);
@@ -93,7 +112,7 @@ const ContactsPage = () => {
   return (
     <div className="contacts-page-web">
       {/* Header */}
-      <div className="contacts-header-web">
+      <div className="contacts-header-web" ref={headerRef}>
         <div className="contacts-header-top">
           <div>
             <h1>👥 Contacts</h1>
@@ -176,6 +195,17 @@ const ContactsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button 
+          className="scroll-to-top-btn"
+          onClick={scrollToTop}
+          title="Retour en haut"
+        >
+          ↑
+        </button>
+      )}
 
       {/* Contact Modal */}
       {showModal && (
