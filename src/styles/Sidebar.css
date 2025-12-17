@@ -3,7 +3,7 @@
 .sidebar {
   position: fixed;
   left: 0;
-  top: 0;
+  top: 70px; /* Below TopBar */
   bottom: 0;
   width: 260px;
   background: var(--surface);
