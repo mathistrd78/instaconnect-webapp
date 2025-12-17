@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import '../styles/FilterBar.css';
 
 const FilterBar = ({ activeFilters, onFilterChange }) => {
-  const { defaultFields } = useApp();
+  const { defaultFields, customTags } = useApp();
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
@@ -22,6 +22,13 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   const filterFields = defaultFields.filter(f => 
     f.type === 'select' || f.type === 'radio'
   );
+
+  const getFieldTags = (field) => {
+    // Merge default tags with custom tags
+    const customFieldTags = customTags[field.id] || [];
+    const allTags = [...(field.tags || []), ...customFieldTags];
+    return allTags;
+  };
 
   const toggleFilter = (fieldId, value) => {
     const current = activeFilters[fieldId] || [];
@@ -45,6 +52,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   return (
     <div className="filter-bar" ref={dropdownRef}>
       {filterFields.map(field => {
+        const fieldTags = getFieldTags(field);
         const activeCount = activeFilters[field.id]?.length || 0;
         const isOpen = openDropdown === field.id;
 
@@ -61,16 +69,20 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
             {isOpen && (
               <div className="filter-dropdown-menu">
-                {field.tags?.map(tag => (
-                  <label key={tag.value} className="filter-option">
-                    <input
-                      type="checkbox"
-                      checked={activeFilters[field.id]?.includes(tag.value) || false}
-                      onChange={() => toggleFilter(field.id, tag.value)}
-                    />
-                    <span>{tag.label}</span>
-                  </label>
-                ))}
+                {fieldTags.length === 0 ? (
+                  <div className="filter-empty">Aucune option disponible</div>
+                ) : (
+                  fieldTags.map(tag => (
+                    <label key={tag.value} className="filter-option">
+                      <input
+                        type="checkbox"
+                        checked={activeFilters[field.id]?.includes(tag.value) || false}
+                        onChange={() => toggleFilter(field.id, tag.value)}
+                      />
+                      <span>{tag.label}</span>
+                    </label>
+                  ))
+                )}
               </div>
             )}
           </div>
