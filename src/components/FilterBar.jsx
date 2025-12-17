@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import '../styles/FilterBar.css';
 
 const FilterBar = ({ activeFilters, onFilterChange }) => {
-  const { defaultFields, customTags } = useApp();
+  const { defaultFields, customTags, customFields, contacts } = useApp();
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
@@ -19,19 +19,77 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filterFields = defaultFields.filter(f => 
-    f.type === 'select' || f.type === 'radio'
-  );
+  // Get all fields that can be filtered
+  const filterFields = [
+    ...defaultFields.filter(f => f.type === 'select' || f.type === 'radio'),
+    ...customFields.filter(f => f.type === 'select' || f.type === 'radio')
+  ];
 
-  const getFieldTags = (field) => {
-    // Merge default tags with custom tags
+  // Add special filters
+  const specialFilters = [
+    {
+      id: 'isFavorite',
+      label: 'Favoris',
+      type: 'boolean',
+      options: [
+        { value: 'true', label: '⭐ Favoris' }
+      ]
+    },
+    {
+      id: 'isComplete',
+      label: 'Profil complet',
+      type: 'boolean',
+      options: [
+        { value: 'true', label: '✅ Complet' },
+        { value: 'false', label: '⚠️ Incomplet' }
+      ]
+    },
+    {
+      id: 'country',
+      label: 'Pays',
+      type: 'dynamic',
+      options: [] // Will be populated dynamically
+    }
+  ];
+
+  // Get unique countries from contacts
+  const getCountryOptions = () => {
+    const countries = new Set();
+    contacts.forEach(contact => {
+      if (contact.location) {
+        if (typeof contact.location === 'object' && contact.location.country) {
+          countries.add(contact.location.country);
+        } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+          const country = contact.location.split(',').pop().trim();
+          if (country) countries.add(country);
+        }
+      }
+    });
+    return Array.from(countries).sort().map(country => ({
+      value: country,
+      label: country
+    }));
+  };
+
+  const getFieldOptions = (field) => {
+    // Special filters
+    if (field.id === 'isFavorite' || field.id === 'isComplete') {
+      return field.options;
+    }
+    
+    if (field.id === 'country') {
+      return getCountryOptions();
+    }
+
+    // Regular fields with tags
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
     return allTags;
   };
 
   const toggleFilter = (e, fieldId, value) => {
-    e.stopPropagation(); // Prevent dropdown from closing
+    e.preventDefault();
+    e.stopPropagation();
     
     const current = activeFilters[fieldId] || [];
     const newFilters = current.includes(value)
@@ -51,10 +109,12 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
   const hasActiveFilters = Object.values(activeFilters).some(f => f && f.length > 0);
 
+  const allFilters = [...filterFields, ...specialFilters];
+
   return (
     <div className="filter-bar" ref={dropdownRef}>
-      {filterFields.map(field => {
-        const fieldTags = getFieldTags(field);
+      {allFilters.map(field => {
+        const fieldOptions = getFieldOptions(field);
         const activeCount = activeFilters[field.id]?.length || 0;
         const isOpen = openDropdown === field.id;
 
@@ -71,23 +131,28 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
             {isOpen && (
               <div className="filter-dropdown-menu">
-                {fieldTags.length === 0 ? (
+                {fieldOptions.length === 0 ? (
                   <div className="filter-empty">Aucune option disponible</div>
                 ) : (
-                  fieldTags.map(tag => (
-                    <label 
-                      key={tag.value} 
-                      className="filter-option"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeFilters[field.id]?.includes(tag.value) || false}
-                        onChange={(e) => toggleFilter(e, field.id, tag.value)}
-                      />
-                      <span>{tag.label}</span>
-                    </label>
-                  ))
+                  fieldOptions.map(option => {
+                    const optionValue = option.value || option;
+                    const optionLabel = option.label || option;
+                    
+                    return (
+                      <label 
+                        key={optionValue} 
+                        className="filter-option"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={activeFilters[field.id]?.includes(optionValue) || false}
+                          onChange={(e) => toggleFilter(e, field.id, optionValue)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>{optionLabel}</span>
+                      </label>
+                    );
+                  })
                 )}
               </div>
             )}
