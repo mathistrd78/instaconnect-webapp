@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import ContactCard from '../components/ContactCard';
 import ContactModal from '../components/ContactModal';
@@ -37,20 +37,28 @@ const ContactsPage = () => {
       }
     });
 
-    // Sort by creation date (most recent first)
+    // Sort alphabetically by firstName
     filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0);
-      const dateB = new Date(b.createdAt || 0);
-      return dateB - dateA;
+      const nameA = (a.firstName || '').toLowerCase();
+      const nameB = (b.firstName || '').toLowerCase();
+      return nameA.localeCompare(nameB);
     });
 
     setFilteredContacts(filtered);
   }, [contacts, searchQuery, activeFilters]);
 
-  const handleAddContact = () => {
-    setEditingContact(null);
-    setShowModal(true);
-  };
+  // Group contacts by first letter
+  const groupedContacts = useMemo(() => {
+    const groups = {};
+    filteredContacts.forEach(contact => {
+      const firstLetter = (contact.firstName?.[0] || '#').toUpperCase();
+      if (!groups[firstLetter]) {
+        groups[firstLetter] = [];
+      }
+      groups[firstLetter].push(contact);
+    });
+    return groups;
+  }, [filteredContacts]);
 
   const handleEditContact = (contact) => {
     setEditingContact(contact);
@@ -74,9 +82,6 @@ const ContactsPage = () => {
               {' '}sur {contacts.length} contact(s)
             </p>
           </div>
-          <button className="btn-add-contact" onClick={handleAddContact}>
-            ➕ Nouveau contact
-          </button>
         </div>
 
         {/* Search Bar */}
@@ -103,8 +108,8 @@ const ContactsPage = () => {
           <EmptyState
             icon="📱"
             text="Aucun contact pour le moment"
-            actionText="Ajouter votre premier contact"
-            onAction={handleAddContact}
+            actionText="Lancer une analyse Instagram"
+            onAction={() => window.location.href = '/app/analyse'}
           />
         ) : filteredContacts.length === 0 ? (
           <EmptyState
@@ -112,13 +117,20 @@ const ContactsPage = () => {
             text="Aucun contact ne correspond à votre recherche"
           />
         ) : (
-          <div className="contacts-grid-web">
-            {filteredContacts.map(contact => (
-              <ContactCard
-                key={contact.id}
-                contact={contact}
-                onEdit={() => handleEditContact(contact)}
-              />
+          <div className="contacts-list-grouped">
+            {Object.keys(groupedContacts).sort().map(letter => (
+              <div key={letter} className="contact-group">
+                <div className="letter-divider">{letter}</div>
+                <div className="contacts-grid-web">
+                  {groupedContacts[letter].map(contact => (
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      onEdit={() => handleEditContact(contact)}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
