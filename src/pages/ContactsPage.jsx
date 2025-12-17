@@ -15,12 +15,15 @@ const ContactsPage = () => {
   const [editingContact, setEditingContact] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const letterRefs = useRef({});
-  const contentRef = useRef(null);
+  const headerRef = useRef(null);
 
   // Detect scroll to show/hide scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+      if (headerRef.current) {
+        const headerBottom = headerRef.current.getBoundingClientRect().bottom;
+        setShowScrollTop(headerBottom < 0);
+      }
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -127,12 +130,7 @@ const ContactsPage = () => {
   const scrollToLetter = (letter) => {
     const element = letterRefs.current[letter];
     if (element) {
-      const headerHeight = 400; // Approximate height of sticky header
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ 
-        top: elementPosition - headerHeight, 
-        behavior: 'smooth' 
-      });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -151,94 +149,90 @@ const ContactsPage = () => {
   };
 
   return (
-    <>
-      {/* Fixed Header */}
-      <div className="contacts-header-fixed">
-        <div className="contacts-header-content">
-          <div className="contacts-header-top">
-            <div>
-              <h1>👥 Contacts</h1>
-              <p className="contacts-subtitle">
-                <span className="count-number">{filteredContacts.length}</span> 
-                {' '}sur {contacts.length} contact(s)
-              </p>
-            </div>
+    <div className="contacts-page-web">
+      {/* Header */}
+      <div className="contacts-header-web" ref={headerRef}>
+        <div className="contacts-header-top">
+          <div>
+            <h1>👥 Contacts</h1>
+            <p className="contacts-subtitle">
+              <span className="count-number">{filteredContacts.length}</span> 
+              {' '}sur {contacts.length} contact(s)
+            </p>
           </div>
+        </div>
 
-          {/* Search Bar */}
-          <div className="contacts-search">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              className="contacts-search-input"
-              placeholder="Rechercher un contact par prénom..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Alphabet Quick Navigation */}
-          <div className="alphabet-nav">
-            {alphabet.map(letter => {
-              const hasContacts = sortedLetters.includes(letter);
-              return (
-                <button
-                  key={letter}
-                  className={`alphabet-letter ${hasContacts ? 'active' : 'disabled'}`}
-                  onClick={() => hasContacts && scrollToLetter(letter)}
-                  disabled={!hasContacts}
-                >
-                  {letter}
-                </button>
-              );
-            })}
-          </div>
-
-          <FilterBar
-            activeFilters={activeFilters}
-            onFilterChange={setActiveFilters}
+        {/* Search Bar */}
+        <div className="contacts-search">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            className="contacts-search-input"
+            placeholder="Rechercher un contact par prénom..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
+        {/* Alphabet Quick Navigation */}
+        <div className="alphabet-nav">
+          {alphabet.map(letter => {
+            const hasContacts = sortedLetters.includes(letter);
+            return (
+              <button
+                key={letter}
+                className={`alphabet-letter ${hasContacts ? 'active' : 'disabled'}`}
+                onClick={() => hasContacts && scrollToLetter(letter)}
+                disabled={!hasContacts}
+              >
+                {letter}
+              </button>
+            );
+          })}
+        </div>
+
+        <FilterBar
+          activeFilters={activeFilters}
+          onFilterChange={setActiveFilters}
+        />
       </div>
 
-      {/* Content with padding top */}
-      <div className="contacts-page-web" ref={contentRef}>
-        <div className="contacts-content-web">
-          {contacts.length === 0 ? (
-            <EmptyState
-              icon="📱"
-              text="Aucun contact pour le moment"
-              actionText="Lancer une analyse Instagram"
-              onAction={() => window.location.href = '/app/analyse'}
-            />
-          ) : filteredContacts.length === 0 ? (
-            <EmptyState
-              icon="🔍"
-              text="Aucun contact ne correspond à votre recherche"
-            />
-          ) : (
-            <div className="contacts-list-grouped">
-              {sortedLetters.map(letter => (
-                <div 
-                  key={letter} 
-                  className="contact-group"
-                  ref={(el) => (letterRefs.current[letter] = el)}
-                >
-                  <div className="letter-divider">{letter}</div>
-                  <div className="contacts-grid-web">
-                    {groupedContacts[letter].map(contact => (
-                      <ContactCard
-                        key={contact.id}
-                        contact={contact}
-                        onEdit={() => handleEditContact(contact)}
-                      />
-                    ))}
-                  </div>
+      {/* Content */}
+      <div className="contacts-content-web">
+        {contacts.length === 0 ? (
+          <EmptyState
+            icon="📱"
+            text="Aucun contact pour le moment"
+            actionText="Lancer une analyse Instagram"
+            onAction={() => window.location.href = '/app/analyse'}
+          />
+        ) : filteredContacts.length === 0 ? (
+          <EmptyState
+            icon="🔍"
+            text="Aucun contact ne correspond à votre recherche"
+          />
+        ) : (
+          <div className="contacts-list-grouped">
+            {sortedLetters.map(letter => (
+              <div 
+                key={letter} 
+                className="contact-group"
+                ref={(el) => (letterRefs.current[letter] = el)}
+              >
+                <div className="letter-divider">{letter}</div>
+                <div className="contacts-grid-web">
+                  {groupedContacts[letter].map(contact => (
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      onEdit={() => handleEditContact(contact)}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Scroll to Top Button */}
@@ -259,7 +253,7 @@ const ContactsPage = () => {
           onClose={handleCloseModal}
         />
       )}
-    </>
+    </div>
   );
 };
 
