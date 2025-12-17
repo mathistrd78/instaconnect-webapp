@@ -30,7 +30,9 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return allTags;
   };
 
-  const toggleFilter = (fieldId, value) => {
+  const toggleFilter = (e, fieldId, value) => {
+    e.stopPropagation(); // Prevent dropdown from closing
+    
     const current = activeFilters[fieldId] || [];
     const newFilters = current.includes(value)
       ? current.filter(v => v !== value)
@@ -73,11 +75,15 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
                   <div className="filter-empty">Aucune option disponible</div>
                 ) : (
                   fieldTags.map(tag => (
-                    <label key={tag.value} className="filter-option">
+                    <label 
+                      key={tag.value} 
+                      className="filter-option"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <input
                         type="checkbox"
                         checked={activeFilters[field.id]?.includes(tag.value) || false}
-                        onChange={() => toggleFilter(field.id, tag.value)}
+                        onChange={(e) => toggleFilter(e, field.id, tag.value)}
                       />
                       <span>{tag.label}</span>
                     </label>
