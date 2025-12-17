@@ -1,0 +1,232 @@
+/* Analyse.css */
+
+.analyse-page {
+  padding: 32px;
+}
+
+.analyse-header {
+  margin-bottom: 32px;
+}
+
+.analyse-header h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.analyse-subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.analyse-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Upload Zone */
+.upload-zone {
+  background: var(--surface);
+  border: 3px dashed var(--border-color);
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+}
+
+.upload-zone:hover {
+  border-color: #E1306C;
+  background: rgba(225, 48, 108, 0.05);
+}
+
+.upload-zone.dragging {
+  border-color: #E1306C;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.1), rgba(193, 53, 132, 0.1));
+  transform: scale(1.02);
+}
+
+.upload-zone.has-file {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.05);
+}
+
+.upload-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.upload-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.upload-subtext {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Analyze Button */
+.btn-analyze {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px 32px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  margin: 0 auto 32px;
+}
+
+.btn-analyze:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn-analyze:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Results */
+.analyse-results {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.analyse-results h3 {
+  font-size: 24px;
+  color: #28a745;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 20px;
+  background: var(--background);
+  border-radius: 12px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.success-message {
+  text-align: center;
+  padding: 16px;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 12px;
+  color: #28a745;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Instructions */
+.analyse-instructions {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.analyse-instructions h3 {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.instructions-section {
+  margin-bottom: 32px;
+}
+
+.instructions-section h4 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.instructions-section ol {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.instructions-section li {
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.instructions-section strong {
+  color: #E1306C;
+  font-weight: 600;
+}
+
+.instructions-note {
+  padding: 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid #ffc107;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.instructions-note strong {
+  color: #ffc107;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .analyse-page {
+    padding: 16px;
+  }
+  
+  .upload-zone {
+    padding: 40px 20px;
+  }
+  
+  .upload-icon {
+    font-size: 48px;
+  }
+  
+  .upload-text {
+    font-size: 16px;
+  }
+  
+  .results-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .analyse-instructions {
+    padding: 20px;
+  }
+}
