@@ -7,6 +7,7 @@
 .main-content-area {
   flex: 1;
   margin-left: 260px;
+  margin-top: 70px; /* Space for fixed TopBar */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
