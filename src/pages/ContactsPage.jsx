@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import ContactCard from '../components/ContactCard';
 import ContactModal from '../components/ContactModal';
@@ -13,19 +13,19 @@ const ContactsPage = () => {
   const [activeFilters, setActiveFilters] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
+  const letterRefs = useRef({});
 
   useEffect(() => {
     // Apply filters and search
     let filtered = [...contacts];
 
-    // Search filter
+    // Search filter - only search by firstName prefix
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(contact =>
-        contact.firstName?.toLowerCase().includes(query) ||
-        contact.instagram?.toLowerCase().includes(query) ||
-        contact.notes?.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(contact => {
+        const firstName = (contact.firstName || '').toLowerCase();
+        return firstName.startsWith(query);
+      });
     }
 
     // Apply active filters
@@ -47,11 +47,16 @@ const ContactsPage = () => {
     setFilteredContacts(filtered);
   }, [contacts, searchQuery, activeFilters]);
 
-  // Group contacts by first letter
+  // Group contacts by first letter (ignore @ for Instagram usernames)
   const groupedContacts = useMemo(() => {
     const groups = {};
     filteredContacts.forEach(contact => {
-      const firstLetter = (contact.firstName?.[0] || '#').toUpperCase();
+      let firstName = contact.firstName || '';
+      // Si le prénom commence par @, on prend la lettre suivante
+      if (firstName.startsWith('@')) {
+        firstName = firstName.substring(1);
+      }
+      const firstLetter = (firstName[0] || '#').toUpperCase();
       if (!groups[firstLetter]) {
         groups[firstLetter] = [];
       }
@@ -59,6 +64,21 @@ const ContactsPage = () => {
     });
     return groups;
   }, [filteredContacts]);
+
+  // Get sorted letters
+  const sortedLetters = useMemo(() => {
+    return Object.keys(groupedContacts).sort();
+  }, [groupedContacts]);
+
+  // Generate alphabet for quick navigation
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+
+  const scrollToLetter = (letter) => {
+    const element = letterRefs.current[letter];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const handleEditContact = (contact) => {
     setEditingContact(contact);
@@ -90,10 +110,27 @@ const ContactsPage = () => {
           <input
             type="text"
             className="contacts-search-input"
-            placeholder="Rechercher un contact..."
+            placeholder="Rechercher un contact par prénom..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+
+        {/* Alphabet Quick Navigation */}
+        <div className="alphabet-nav">
+          {alphabet.map(letter => {
+            const hasContacts = sortedLetters.includes(letter);
+            return (
+              <button
+                key={letter}
+                className={`alphabet-letter ${hasContacts ? 'active' : 'disabled'}`}
+                onClick={() => hasContacts && scrollToLetter(letter)}
+                disabled={!hasContacts}
+              >
+                {letter}
+              </button>
+            );
+          })}
         </div>
 
         <FilterBar
@@ -118,8 +155,12 @@ const ContactsPage = () => {
           />
         ) : (
           <div className="contacts-list-grouped">
-            {Object.keys(groupedContacts).sort().map(letter => (
-              <div key={letter} className="contact-group">
+            {sortedLetters.map(letter => (
+              <div 
+                key={letter} 
+                className="contact-group"
+                ref={(el) => (letterRefs.current[letter] = el)}
+              >
                 <div className="letter-divider">{letter}</div>
                 <div className="contacts-grid-web">
                   {groupedContacts[letter].map(contact => (
