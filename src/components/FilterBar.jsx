@@ -81,7 +81,15 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       return getCountryOptions();
     }
 
-    // Regular fields with tags - REMOVE DUPLICATES
+    // Radio fields use 'options' instead of 'tags'
+    if (field.type === 'radio' && field.options) {
+      return field.options.map(opt => ({
+        value: opt,
+        label: opt
+      }));
+    }
+
+    // Select fields with tags
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
     
@@ -101,8 +109,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   };
 
   const toggleFilter = (fieldId, value) => {
-    console.log('Toggle filter:', fieldId, value); // Debug
-    
     const current = activeFilters[fieldId] || [];
     const newFilters = current.includes(value)
       ? current.filter(v => v !== value)
@@ -120,7 +126,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       }
     });
     
-    console.log('Updated filters:', updatedFilters); // Debug
     onFilterChange(updatedFilters);
   };
 
