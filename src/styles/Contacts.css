@@ -6,7 +6,14 @@
 }
 
 .contacts-header-web {
-  margin-bottom: 32px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--background);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .contacts-header-top {
@@ -157,7 +164,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  scroll-margin-top: 100px;
+  scroll-margin-top: 450px;
 }
 
 .letter-divider {
@@ -215,6 +222,10 @@
     width: 48px;
     height: 48px;
     font-size: 20px;
+  }
+  
+  .contact-group {
+    scroll-margin-top: 300px;
   }
 }
 
