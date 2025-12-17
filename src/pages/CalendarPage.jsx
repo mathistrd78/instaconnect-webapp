@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
+import ContactViewModal from '../components/ContactViewModal';
 import ContactModal from '../components/ContactModal';
 import '../styles/Calendar.css';
 
@@ -8,7 +9,8 @@ const CalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
                       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -57,11 +59,21 @@ const CalendarPage = () => {
 
   const handleContactClick = (contact) => {
     setSelectedContact(contact);
-    setShowModal(true);
+    setShowViewModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  const handleEdit = () => {
+    setShowViewModal(false);
+    setShowEditModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedContact(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
     setSelectedContact(null);
   };
 
@@ -199,11 +211,20 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Contact Modal */}
-      {showModal && selectedContact && (
+      {/* View Modal */}
+      {showViewModal && selectedContact && (
+        <ContactViewModal
+          contact={selectedContact}
+          onClose={handleCloseViewModal}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedContact && (
         <ContactModal
           contact={selectedContact}
-          onClose={handleCloseModal}
+          onClose={handleCloseEditModal}
         />
       )}
     </div>
