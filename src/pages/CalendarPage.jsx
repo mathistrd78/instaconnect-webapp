@@ -108,7 +108,7 @@ const CalendarPage = () => {
     setSelectedContact(null);
   };
 
-  // Format Instagram username
+  // Format Instagram username (fix double @@)
   const getInstagramDisplay = (username) => {
     if (!username) return null;
     return username.startsWith('@') ? username : `@${username}`;
@@ -123,58 +123,56 @@ const CalendarPage = () => {
         </p>
       </div>
 
-      <div className="calendar-container">
-        {/* Calendar */}
-        <div className="calendar-main">
-          <div className="calendar-nav">
-            <button className="calendar-nav-btn" onClick={previousMonth}>
+      <div className="calendar-layout">
+        {/* Left: Calendar */}
+        <div className="calendar-section">
+          <div className="calendar-controls">
+            <button className="calendar-btn prev" onClick={previousMonth}>
               ◀
             </button>
-            <h2 className="calendar-month">
+            <h2 className="calendar-title">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
-            <button className="calendar-nav-btn" onClick={nextMonth}>
+            <button className="calendar-btn next" onClick={nextMonth}>
               ▶
             </button>
           </div>
 
           <div className="calendar-grid">
-            {/* Weekday headers */}
-            {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map(day => (
-              <div key={day} className="calendar-weekday">
-                {day}
-              </div>
-            ))}
+            <div className="calendar-weekdays">
+              {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map(day => (
+                <div key={day} className="weekday">{day}</div>
+              ))}
+            </div>
 
-            {/* Calendar days */}
-            {calendarDays.map((dayInfo, index) => (
-              <div
-                key={index}
-                className={`calendar-day ${!dayInfo.day ? 'empty' : ''} ${
-                  isToday(dayInfo.date) ? 'today' : ''
-                } ${isSelectedDate(dayInfo.date) ? 'selected' : ''} ${
-                  isPastDate(dayInfo.date) ? 'past' : ''
-                } ${dayInfo.hasMeeting ? 'has-meeting' : ''}`}
-                onClick={() => handleDayClick(dayInfo.date)}
-              >
-                {dayInfo.day && (
-                  <>
-                    <span className="day-number">{dayInfo.day}</span>
-                    {dayInfo.hasMeeting && (
-                      <div className="meeting-indicator">
-                        {dayInfo.meetingCount}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
+            <div className="calendar-days">
+              {calendarDays.map((dayInfo, index) => (
+                <div
+                  key={index}
+                  className={`calendar-day ${!dayInfo.day ? 'empty' : ''} ${
+                    isToday(dayInfo.date) ? 'today' : ''
+                  } ${isSelectedDate(dayInfo.date) ? 'selected' : ''} ${
+                    isPastDate(dayInfo.date) ? 'past' : ''
+                  } ${dayInfo.hasMeeting ? 'has-meeting' : ''}`}
+                  onClick={() => handleDayClick(dayInfo.date)}
+                >
+                  {dayInfo.day && (
+                    <>
+                      <span className="day-number">{dayInfo.day}</span>
+                      {dayInfo.hasMeeting && (
+                        <span className="meeting-dot"></span>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Side panel */}
-        <div className="calendar-sidebar">
-          <div className="sidebar-header">
+        {/* Right: Meetings list */}
+        <div className="meetings-section">
+          <div className="meetings-header">
             <h3>
               {selectedDate.toLocaleDateString('fr-FR', {
                 day: 'numeric',
@@ -182,26 +180,31 @@ const CalendarPage = () => {
                 year: 'numeric'
               })}
             </h3>
+            <span className="meetings-count">
+              {selectedDateMeetings.length} RDV
+            </span>
           </div>
 
           <div className="meetings-list">
             {selectedDateMeetings.length === 0 ? (
-              <div className="no-meetings">
-                <span className="no-meetings-icon">📭</span>
-                <p>Aucun rendez-vous prévu ce jour</p>
+              <div className="empty-meetings">
+                <span className="empty-icon">📭</span>
+                <p>Aucun rendez-vous ce jour</p>
               </div>
             ) : (
               selectedDateMeetings.map(contact => (
                 <div
                   key={contact.id}
-                  className="meeting-item"
+                  className="meeting-card"
                   onClick={() => handleContactClick(contact)}
                 >
                   <div className="meeting-avatar">
                     {contact.firstName?.[0]?.toUpperCase() || '?'}
                   </div>
-                  <div className="meeting-info">
-                    <div className="meeting-name">{contact.firstName || 'Sans nom'}</div>
+                  <div className="meeting-details">
+                    <div className="meeting-name">
+                      {contact.firstName || 'Sans nom'}
+                    </div>
                     {contact.instagram && (
                       <div className="meeting-instagram">
                         {getInstagramDisplay(contact.instagram)}
@@ -209,8 +212,8 @@ const CalendarPage = () => {
                     )}
                     {contact.notes && (
                       <div className="meeting-notes">
-                        {contact.notes.substring(0, 50)}
-                        {contact.notes.length > 50 && '...'}
+                        {contact.notes.substring(0, 60)}
+                        {contact.notes.length > 60 && '...'}
                       </div>
                     )}
                   </div>
