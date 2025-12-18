@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -8,6 +8,11 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { contacts, darkMode, toggleDarkMode } = useApp();
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const instagramStats = {
     followers: 0,
@@ -36,6 +41,11 @@ const ProfilePage = () => {
         alert('Erreur lors de la suppression du compte');
       }
     }
+  };
+
+  const handleToggleDarkMode = () => {
+    console.log('Toggle dark mode clicked'); // Debug
+    toggleDarkMode();
   };
 
   return (
@@ -100,8 +110,12 @@ const ProfilePage = () => {
               {darkMode ? 'Activé' : 'Désactivé'}
             </div>
           </div>
-          <label className="switch">
-            <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
+          <label className="switch" onClick={(e) => e.stopPropagation()}>
+            <input 
+              type="checkbox" 
+              checked={darkMode} 
+              onChange={handleToggleDarkMode}
+            />
             <span className="slider"></span>
           </label>
         </div>
