@@ -10,6 +10,7 @@ const Sidebar = () => {
     { id: 'contacts', label: 'Contacts', icon: '👥', path: '/app/contacts' },
     { id: 'calendar', label: 'Calendrier', icon: '📅', path: '/app/calendrier' },
     { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
+    { icon: '💔', label: 'Unfollowers', path: '/app/unfollowers' },
     { id: 'settings', label: 'Paramètres', icon: '⚙️', path: '/app/parametres' }
   ];
 
