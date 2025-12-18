@@ -9,6 +9,7 @@ import TagsPage from './TagsPage';
 import FieldsPage from './FieldsPage';
 import ProfilePage from './ProfilePage';
 import AnalysePage from './AnalysePage';
+import UnfollowersPage from './UnfollowersPage';
 import '../styles/MainApp.css';
 
 const MainApp = () => {
@@ -28,6 +29,7 @@ const MainApp = () => {
             <Route path="/champs" element={<FieldsPage />} />
             <Route path="/parametres" element={<ProfilePage />} />
             <Route path="/analyse" element={<AnalysePage />} />
+            <Route path="unfollowers" element={<UnfollowersPage />} />
           </Routes>
         </div>
       </div>
