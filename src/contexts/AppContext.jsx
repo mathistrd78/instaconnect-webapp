@@ -168,6 +168,9 @@ export const AppProvider = ({ children }) => {
         if (userData.customFields) {
           setCustomFields(userData.customFields);
         }
+        if (userData.defaultFields) {
+          setDefaultFields(userData.defaultFields);
+        }
       }
 
       // Load contacts
@@ -189,7 +192,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Save contacts to Firestore
-  const saveContacts = async (contactsToSave = null, saveMetadata = false) => {
+  const saveContacts = async (contactsToSave = null, saveMetadata = false, explicitMetadata = null) => {
     if (!currentUser) return;
 
     try {
@@ -211,11 +214,13 @@ export const AppProvider = ({ children }) => {
 
       if (saveMetadata) {
         const userRef = doc(db, 'users', userId);
-        batch.set(userRef, {
+        const metadataToSave = explicitMetadata || {
           customTags,
           customFields,
           defaultFields
-        }, { merge: true });
+        };
+        batch.set(userRef, metadataToSave, { merge: true });
+        console.log('💾 Saving metadata to Firebase:', metadataToSave);
       }
 
       await batch.commit();
