@@ -43,6 +43,23 @@ const ProfilePage = () => {
     }
   };
 
+  const handleMigrateTags = async () => {
+    if (window.confirm('⚠️ Cette opération va créer automatiquement tous les tags utilisés dans vos contacts. Continuer ?')) {
+      try {
+        const result = await migrateTags(currentUser.uid);
+        if (result.success) {
+          alert('✅ Migration réussie ! Vos tags ont été créés.');
+          window.location.reload();
+        } else {
+          alert('❌ Erreur lors de la migration : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error migrating tags:', error);
+        alert('❌ Erreur lors de la migration');
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -167,6 +184,9 @@ const ProfilePage = () => {
       </section>
 
       <div className="danger-zone">
+        <button className="btn-migrate-tags" onClick={handleMigrateTags}>
+          🔄 Migrer les tags
+        </button>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
         </button>
