@@ -6,22 +6,21 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
-    { id: 'contacts', icon: '👥', label: 'Contacts', path: '/app/contacts' },
-    { id: 'calendar', icon: '📅', label: 'Calendrier', path: '/app/calendar' },
-    { id: 'stats', icon: '📊', label: 'Statistiques', path: '/app/stats' },
-    { id: 'tags', icon: '🏷️', label: 'Tags', path: '/app/tags' },
-    { id: 'fields', icon: '📝', label: 'Champs', path: '/app/fields' },
-    { id: 'profile', icon: '⚙️', label: 'Paramètres', path: '/app/profile' }
+  const menuItems = [
+    { id: 'contacts', label: 'Contacts', icon: '👥', path: '/app/contacts' },
+    { id: 'calendar', label: 'Calendrier', icon: '📅', path: '/app/calendrier' },
+    { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
+    { id: 'settings', label: 'Paramètres', icon: '⚙️', path: '/app/parametres' }
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
   return (
     <div className="sidebar">
-      {/* Navigation */}
       <nav className="sidebar-nav">
-        {navItems.map(item => (
+        {menuItems.map(item => (
           <div
             key={item.id}
             className={`sidebar-nav-item ${isActive(item.path) ? 'active' : ''}`}
@@ -33,9 +32,8 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="sidebar-footer">
-        <div className="sidebar-version">v2.0.0</div>
+        <div className="sidebar-version">v1.0.0</div>
       </div>
     </div>
   );
