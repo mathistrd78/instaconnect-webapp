@@ -130,6 +130,36 @@
   color: var(--text-secondary);
 }
 
+/* Category Filters */
+.category-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: #E1306C;
+}
+
+.filter-btn.active {
+  border-color: #E1306C;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(193, 53, 132, 0.1) 100%);
+  color: #E1306C;
+}
+
 /* Contacts List */
 .contacts-list {
   display: flex;
@@ -244,6 +274,31 @@
 .btn-remove-tag:hover {
   background: #2196F3;
   color: white;
+  transform: scale(1.1);
+}
+
+/* Category Buttons */
+.btn-category {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: var(--surface);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-category:hover {
+  transform: scale(1.05);
+}
+
+.btn-category.active {
+  border-color: #E1306C;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(193, 53, 132, 0.1) 100%);
   transform: scale(1.1);
 }
 
