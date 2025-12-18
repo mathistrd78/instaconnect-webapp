@@ -2,343 +2,266 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import '../styles/ContactModal.css';
 
-const ContactModal = ({ contact, onClose }) => {
-  const { addContact, updateContact, deleteContact, getAllFields, customTags } = useApp();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    instagram: '',
-    notes: '',
-    location: '',
-    birthDay: '',
-    birthMonth: '',
-    birthYear: '',
-    isFavorite: false,
-    ...contact
-  });
+const ContactModal = ({ contact, onClose, onSave }) => {
+  const { getAllFields } = useApp();
+  const [formData, setFormData] = useState({});
+  const [selectedDay, setSelectedDay] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedMeetingDay, setSelectedMeetingDay] = useState('');
+  const [selectedMeetingMonth, setSelectedMeetingMonth] = useState('');
+  const [selectedMeetingYear, setSelectedMeetingYear] = useState('');
 
-  const [errors, setErrors] = useState({});
+  const allFields = getAllFields();
 
   useEffect(() => {
     if (contact) {
-      // Parse existing birthDate if present
+      setFormData({ ...contact });
+
+      // Parse birthDate
       if (contact.birthDate) {
         const date = new Date(contact.birthDate);
-        setFormData(prev => ({
-          ...prev,
-          birthDay: date.getDate().toString(),
-          birthMonth: (date.getMonth() + 1).toString(),
-          birthYear: date.getFullYear().toString()
-        }));
+        if (!isNaN(date.getTime())) {
+          setSelectedDay(String(date.getDate()).padStart(2, '0'));
+          setSelectedMonth(String(date.getMonth() + 1).padStart(2, '0'));
+          setSelectedYear(String(date.getFullYear()));
+        }
       }
 
-      // Handle location object
-      if (contact.location && typeof contact.location === 'object') {
-        setFormData(prev => ({
-          ...prev,
-          location: contact.location.displayName || 
-                   `${contact.location.city || ''}, ${contact.location.country || ''}`.trim()
-        }));
+      // Parse nextMeeting
+      if (contact.nextMeeting) {
+        const date = new Date(contact.nextMeeting);
+        if (!isNaN(date.getTime())) {
+          setSelectedMeetingDay(String(date.getDate()).padStart(2, '0'));
+          setSelectedMeetingMonth(String(date.getMonth() + 1).padStart(2, '0'));
+          setSelectedMeetingYear(String(date.getFullYear()));
+        }
       }
     }
   }, [contact]);
 
-  const allFields = getAllFields();
+  // Update birthDate when selects change
+  useEffect(() => {
+    if (selectedDay && selectedMonth && selectedYear) {
+      const dateStr = `${selectedYear}-${selectedMonth}-${selectedDay}`;
+      setFormData(prev => ({ ...prev, birthDate: dateStr }));
+    }
+  }, [selectedDay, selectedMonth, selectedYear]);
+
+  // Update nextMeeting when selects change
+  useEffect(() => {
+    if (selectedMeetingDay && selectedMeetingMonth && selectedMeetingYear) {
+      const dateStr = `${selectedMeetingYear}-${selectedMeetingMonth}-${selectedMeetingDay}`;
+      setFormData(prev => ({ ...prev, nextMeeting: dateStr }));
+    }
+  }, [selectedMeetingDay, selectedMeetingMonth, selectedMeetingYear]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
 
   const handleChange = (fieldId, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
-    
-    // Clear error for this field
-    if (errors[fieldId]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldId];
-        return newErrors;
-      });
-    }
+    setFormData(prev => ({ ...prev, [fieldId]: value }));
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    allFields.forEach(field => {
-      if (field.required && !formData[field.id]) {
-        newErrors[field.id] = `${field.label} est requis`;
-      }
-    });
+  // Generate day options
+  const days = Array.from({ length: 31 }, (_, i) => {
+    const day = String(i + 1).padStart(2, '0');
+    return { value: day, label: day };
+  });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // Generate month options
+  const months = [
+    { value: '01', label: 'Janvier' },
+    { value: '02', label: 'Février' },
+    { value: '03', label: 'Mars' },
+    { value: '04', label: 'Avril' },
+    { value: '05', label: 'Mai' },
+    { value: '06', label: 'Juin' },
+    { value: '07', label: 'Juillet' },
+    { value: '08', label: 'Août' },
+    { value: '09', label: 'Septembre' },
+    { value: '10', label: 'Octobre' },
+    { value: '11', label: 'Novembre' },
+    { value: '12', label: 'Décembre' }
+  ];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    // Build birthDate from day/month/year if at least one is present
-    let birthDate = null;
-    if (formData.birthYear || formData.birthMonth || formData.birthDay) {
-      const year = formData.birthYear || '2000';
-      const month = formData.birthMonth || '1';
-      const day = formData.birthDay || '1';
-      birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString();
-    }
-
-    const dataToSave = {
-      ...formData,
-      birthDate,
-      location: formData.location || null,
-      updatedAt: new Date().toISOString()
-    };
-
-    // Remove temporary fields
-    delete dataToSave.birthDay;
-    delete dataToSave.birthMonth;
-    delete dataToSave.birthYear;
-
-    if (contact?.id) {
-      await updateContact(contact.id, dataToSave);
-    } else {
-      await addContact({
-        ...dataToSave,
-        createdAt: new Date().toISOString()
-      });
-    }
-    
-    onClose();
-  };
-
-  const handleDelete = async () => {
-    if (window.confirm(`Supprimer ${formData.firstName || 'ce contact'} ?`)) {
-      await deleteContact(contact.id);
-      onClose();
-    }
-  };
-
-  const getFieldOptions = (field) => {
-    // Get custom tags for this field
-    const customFieldTags = customTags[field.id] || [];
-    
-    // For radio fields, use options
-    if (field.type === 'radio' && field.options) {
-      const allOptions = [...field.options, ...customFieldTags.map(t => t.value || t)];
-      // Remove duplicates
-      return [...new Set(allOptions)];
-    }
-    
-    // For select fields, use tags
-    const allTags = [...(field.tags || []), ...customFieldTags];
-    
-    // Remove duplicates based on value
-    const uniqueTags = [];
-    const seenValues = new Set();
-    
-    allTags.forEach(tag => {
-      const value = tag.value || tag;
-      if (!seenValues.has(value)) {
-        seenValues.add(value);
-        uniqueTags.push(tag);
-      }
-    });
-    
-    return uniqueTags;
-  };
+  // Generate year options (current year ± 100 years)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 201 }, (_, i) => {
+    const year = String(currentYear - 100 + i);
+    return { value: year, label: year };
+  });
 
   const renderField = (field) => {
-    const value = formData[field.id] || '';
-    const hasError = errors[field.id];
-    const options = getFieldOptions(field);
-
-    // Special handling for birthDate - 3 separate selects
-    if (field.id === 'birthDate') {
-      const days = Array.from({ length: 31 }, (_, i) => i + 1);
-      const months = [
-        { value: '1', label: 'Janvier' },
-        { value: '2', label: 'Février' },
-        { value: '3', label: 'Mars' },
-        { value: '4', label: 'Avril' },
-        { value: '5', label: 'Mai' },
-        { value: '6', label: 'Juin' },
-        { value: '7', label: 'Juillet' },
-        { value: '8', label: 'Août' },
-        { value: '9', label: 'Septembre' },
-        { value: '10', label: 'Octobre' },
-        { value: '11', label: 'Novembre' },
-        { value: '12', label: 'Décembre' }
-      ];
-      const currentYear = new Date().getFullYear();
-      const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-
-      return (
-        <div key={field.id} className="form-group">
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <div className="birth-date-container">
-            <select
-              className="form-select birth-select"
-              value={formData.birthDay || ''}
-              onChange={(e) => handleChange('birthDay', e.target.value)}
-            >
-              <option value="">Jour</option>
-              {days.map(day => (
-                <option key={day} value={day}>{day}</option>
-              ))}
-            </select>
-            <select
-              className="form-select birth-select"
-              value={formData.birthMonth || ''}
-              onChange={(e) => handleChange('birthMonth', e.target.value)}
-            >
-              <option value="">Mois</option>
-              {months.map(month => (
-                <option key={month.value} value={month.value}>{month.label}</option>
-              ))}
-            </select>
-            <select
-              className="form-select birth-select"
-              value={formData.birthYear || ''}
-              onChange={(e) => handleChange('birthYear', e.target.value)}
-            >
-              <option value="">Année</option>
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
-
-    // Special handling for nextMeeting - date input
-    if (field.id === 'nextMeeting') {
-      return (
-        <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-          <label className="form-label">
-            {field.label}
-            {field.required && <span className="required">*</span>}
-          </label>
-          <input
-            type="date"
-            className="form-input"
-            value={value ? value.split('T')[0] : ''}
-            onChange={(e) => handleChange(field.id, e.target.value ? new Date(e.target.value).toISOString() : '')}
-          />
-          {hasError && <span className="error-message">{hasError}</span>}
-        </div>
-      );
-    }
+    // Instagram field is disabled
+    const isDisabled = field.id === 'instagram';
 
     switch (field.type) {
       case 'text':
         return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <input
-              type="text"
-              className="form-input"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-              placeholder={field.label}
-              disabled={field.id === 'instagram'}
-            />
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
+          <input
+            type="text"
+            id={field.id}
+            className={`form-input ${isDisabled ? 'disabled' : ''}`}
+            value={formData[field.id] || ''}
+            onChange={(e) => handleChange(field.id, e.target.value)}
+            required={field.required}
+            disabled={isDisabled}
+          />
         );
 
       case 'textarea':
         return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <textarea
-              className="form-textarea"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-              placeholder={field.label}
-              rows={4}
-            />
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
+          <textarea
+            id={field.id}
+            className="form-input"
+            value={formData[field.id] || ''}
+            onChange={(e) => handleChange(field.id, e.target.value)}
+            required={field.required}
+            rows={4}
+          />
         );
 
       case 'select':
         return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <select
-              className="form-select"
-              value={value}
-              onChange={(e) => handleChange(field.id, e.target.value)}
-            >
-              <option value="">Sélectionner...</option>
-              {options.map(option => {
-                const optionValue = option.value || option;
-                const optionLabel = option.label || option;
-                return (
-                  <option key={optionValue} value={optionValue}>
-                    {optionLabel}
-                  </option>
-                );
-              })}
-            </select>
-            {hasError && <span className="error-message">{hasError}</span>}
-          </div>
+          <select
+            id={field.id}
+            className="form-input"
+            value={formData[field.id] || ''}
+            onChange={(e) => handleChange(field.id, e.target.value)}
+            required={field.required}
+          >
+            <option value="">Sélectionner</option>
+            {field.tags && field.tags.map((tag, index) => (
+              <option key={index} value={tag.value || tag}>
+                {tag.label || tag}
+              </option>
+            ))}
+          </select>
         );
 
       case 'radio':
         return (
-          <div key={field.id} className={`form-group ${hasError ? 'error' : ''}`}>
-            <label className="form-label">
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            <div className="radio-group">
-              {options.map(option => (
-                <label key={option} className="radio-label">
-                  <input
-                    type="radio"
-                    name={field.id}
-                    value={option}
-                    checked={value === option}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
-                  />
-                  <span>{option}</span>
-                </label>
-              ))}
-            </div>
-            {hasError && <span className="error-message">{hasError}</span>}
+          <div className="radio-group">
+            {field.options && field.options.map((option, index) => (
+              <label key={index} className="radio-label">
+                <input
+                  type="radio"
+                  name={field.id}
+                  value={option}
+                  checked={formData[field.id] === option}
+                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  required={field.required}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
           </div>
         );
 
       case 'checkbox':
         return (
-          <div key={field.id} className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={!!value}
-                onChange={(e) => handleChange(field.id, e.target.checked)}
-              />
-              <span>{field.label}</span>
-            </label>
-          </div>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={formData[field.id] || false}
+              onChange={(e) => handleChange(field.id, e.target.checked)}
+            />
+            <span>{field.label}</span>
+          </label>
         );
+
+      case 'date':
+        if (field.id === 'birthDate') {
+          return (
+            <div className="date-selects">
+              <select
+                className="form-input date-select"
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Jour</option>
+                {days.map(day => (
+                  <option key={day.value} value={day.value}>{day.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-input date-select"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Mois</option>
+                {months.map(month => (
+                  <option key={month.value} value={month.value}>{month.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-input date-select"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Année</option>
+                {years.map(year => (
+                  <option key={year.value} value={year.value}>{year.label}</option>
+                ))}
+              </select>
+            </div>
+          );
+        } else if (field.id === 'nextMeeting') {
+          return (
+            <div className="date-selects">
+              <select
+                className="form-input date-select"
+                value={selectedMeetingDay}
+                onChange={(e) => setSelectedMeetingDay(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Jour</option>
+                {days.map(day => (
+                  <option key={day.value} value={day.value}>{day.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-input date-select"
+                value={selectedMeetingMonth}
+                onChange={(e) => setSelectedMeetingMonth(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Mois</option>
+                {months.map(month => (
+                  <option key={month.value} value={month.value}>{month.label}</option>
+                ))}
+              </select>
+              <select
+                className="form-input date-select"
+                value={selectedMeetingYear}
+                onChange={(e) => setSelectedMeetingYear(e.target.value)}
+                required={field.required}
+              >
+                <option value="">Année</option>
+                {years.map(year => (
+                  <option key={year.value} value={year.value}>{year.label}</option>
+                ))}
+              </select>
+            </div>
+          );
+        } else {
+          return (
+            <input
+              type="date"
+              id={field.id}
+              className="form-input"
+              value={formData[field.id] || ''}
+              onChange={(e) => handleChange(field.id, e.target.value)}
+              required={field.required}
+            />
+          );
+        }
 
       default:
         return null;
@@ -349,26 +272,28 @@ const ContactModal = ({ contact, onClose }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{contact ? 'Modifier le contact' : 'Nouveau contact'}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <h2>{contact?.id ? 'Modifier le contact' : 'Nouveau contact'}</h2>
+          <button className="close-button" onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {allFields.map(field => renderField(field))}
+          {allFields.map(field => (
+            <div key={field.id} className="form-group">
+              <label htmlFor={field.id} className="form-label">
+                {field.label}
+                {field.required && <span className="required">*</span>}
+              </label>
+              {renderField(field)}
+            </div>
+          ))}
 
           <div className="modal-actions">
-            <button type="submit" className="btn-primary">
-              {contact ? 'Modifier' : 'Créer'}
+            <button type="button" className="btn-cancel" onClick={onClose}>
+              Annuler
             </button>
-            {contact && (
-              <button 
-                type="button" 
-                className="btn-delete" 
-                onClick={handleDelete}
-              >
-                🗑️ Supprimer
-              </button>
-            )}
+            <button type="submit" className="btn-save">
+              Enregistrer
+            </button>
           </div>
         </form>
       </div>
