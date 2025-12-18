@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../contexts/AppContext';
 import '../styles/Fields.css';
 
@@ -16,6 +16,7 @@ const FieldsPage = () => {
     options: []
   });
   const [optionInput, setOptionInput] = useState('');
+  const formRef = useRef(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -72,6 +73,11 @@ const FieldsPage = () => {
       options: field.options || []
     });
     setShowForm(true);
+    
+    // Scroll to top to show form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleDeleteField = (fieldId) => {
@@ -177,7 +183,7 @@ const FieldsPage = () => {
       </div>
 
       {showForm && (
-        <div className="add-field-form">
+        <div className="add-field-form" ref={formRef}>
           <h3>{editingField ? 'Modifier le champ' : 'Nouveau champ personnalisé'}</h3>
           <div className="form-row">
             <div className="form-group">
@@ -240,14 +246,18 @@ const FieldsPage = () => {
             </div>
           )}
 
-          <label className="checkbox-label">
+          <div 
+            className="checkbox-label"
+            onClick={() => setNewField({ ...newField, required: !newField.required })}
+          >
             <input
               type="checkbox"
               checked={newField.required}
-              onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
+              onChange={() => {}}
+              readOnly
             />
             Champ obligatoire
-          </label>
+          </div>
           <div className="form-actions">
             <button className="btn-cancel" onClick={cancelForm}>
               Annuler
@@ -272,51 +282,54 @@ const FieldsPage = () => {
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
-                  {allFields.map((field, index) => (
-                    <Draggable key={field.id} draggableId={field.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`field-card ${snapshot.isDragging ? 'dragging' : ''}`}
-                        >
-                          <div className="drag-handle">⋮⋮</div>
-                          <div className="field-info">
-                            <div className="field-icon">{getFieldIcon(field.type)}</div>
-                            <div className="field-details">
-                              <div className="field-label">{field.label}</div>
-                              <div className="field-type">{getFieldTypeName(field.type)}</div>
+                  {allFields.map((field, index) => {
+                    const isDefault = isDefaultField(field.id);
+                    return (
+                      <Draggable key={field.id} draggableId={field.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`field-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                          >
+                            <div className="drag-handle">⋮⋮</div>
+                            <div className="field-info">
+                              <div className="field-icon">{getFieldIcon(field.type)}</div>
+                              <div className="field-details">
+                                <div className="field-label">{field.label}</div>
+                                <div className="field-type">{getFieldTypeName(field.type)}</div>
+                              </div>
+                            </div>
+                            <div className="field-actions">
+                              {field.required && <span className="badge-required">Requis</span>}
+                              {!isDefault && (
+                                <>
+                                  <button
+                                    className="btn-edit-field"
+                                    onClick={() => handleEditField(field)}
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    className="btn-delete-field"
+                                    onClick={() => handleDeleteField(field.id)}
+                                  >
+                                    🗑️
+                                  </button>
+                                </>
+                              )}
+                              {isDefault ? (
+                                <span className="badge-default">Par défaut</span>
+                              ) : (
+                                <span className="badge-custom">Personnalisé</span>
+                              )}
                             </div>
                           </div>
-                          <div className="field-actions">
-                            {field.required && <span className="badge-required">Requis</span>}
-                            {isDefaultField(field.id) ? (
-                              <span className="badge-default">Par défaut</span>
-                            ) : (
-                              <span className="badge-custom">Personnalisé</span>
-                            )}
-                            {!isDefaultField(field.id) && (
-                              <>
-                                <button
-                                  className="btn-edit-field"
-                                  onClick={() => handleEditField(field)}
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  className="btn-delete-field"
-                                  onClick={() => handleDeleteField(field.id)}
-                                >
-                                  🗑️
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                        )}
+                      </Draggable>
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}
