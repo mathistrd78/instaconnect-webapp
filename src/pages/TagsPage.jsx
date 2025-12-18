@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import EmojiPicker from 'emoji-picker-react';
 import { useApp } from '../contexts/AppContext';
 import '../styles/Tags.css';
 
@@ -8,13 +9,28 @@ const TagsPage = () => {
   const navigate = useNavigate();
   const { defaultFields, customTags, setCustomTags, saveContacts } = useApp();
   const [selectedField, setSelectedField] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingTag, setEditingTag] = useState(null);
   const [newTag, setNewTag] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
   const [newColor, setNewColor] = useState('#E1306C');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
 
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Filter fields that support tags (select type)
@@ -38,9 +54,21 @@ const TagsPage = () => {
       class: `tag-${newTag.toLowerCase().replace(/\s+/g, '-')}`
     };
 
+    let updatedFieldTags;
+
+    if (editingTag) {
+      // Update existing tag
+      updatedFieldTags = (customTags[selectedField] || []).map(t =>
+        t.value === editingTag.value ? newTagObj : t
+      );
+    } else {
+      // Add new tag
+      updatedFieldTags = [...(customTags[selectedField] || []), newTagObj];
+    }
+
     const updatedTags = {
       ...customTags,
-      [selectedField]: [...(customTags[selectedField] || []), newTagObj]
+      [selectedField]: updatedFieldTags
     };
 
     setCustomTags(updatedTags);
@@ -52,9 +80,25 @@ const TagsPage = () => {
       defaultFields
     });
 
+    // Reset form
     setNewTag('');
     setNewEmoji('');
     setNewColor('#E1306C');
+    setShowForm(false);
+    setEditingTag(null);
+  };
+
+  const handleEditTag = (tag) => {
+    setEditingTag(tag);
+    setNewTag(tag.value);
+    setNewEmoji(tag.label.split(' ')[0] || '');
+    setNewColor(tag.color || '#E1306C');
+    setShowForm(true);
+
+    // Scroll to top
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleDeleteTag = async (fieldId, tagValue) => {
@@ -94,6 +138,21 @@ const TagsPage = () => {
       customFields: [],
       defaultFields
     });
+
+    console.log('✅ Tag order saved');
+  };
+
+  const handleEmojiClick = (emojiData) => {
+    setNewEmoji(emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingTag(null);
+    setNewTag('');
+    setNewEmoji('');
+    setNewColor('#E1306C');
   };
 
   const getFieldIcon = (fieldId) => {
@@ -115,11 +174,68 @@ const TagsPage = () => {
       </button>
 
       <div className="tags-header">
-        <h1>🏷️ Gestion des tags</h1>
-        <p className="tags-subtitle">
-          Personnalisez vos étiquettes et catégories
-        </p>
+        <div>
+          <h1>🏷️ Gestion des tags</h1>
+          <p className="tags-subtitle">
+            Personnalisez vos étiquettes et catégories
+          </p>
+        </div>
+        {!showForm && (
+          <button className="btn-add-tag-header" onClick={() => setShowForm(true)}>
+            + Ajouter un tag
+          </button>
+        )}
       </div>
+
+      {showForm && (
+        <div className="add-tag-form-container">
+          <h3>{editingTag ? 'Modifier le tag' : 'Nouveau tag'}</h3>
+          <div className="add-tag-form">
+            <div className="emoji-color-group">
+              <div className="emoji-input-wrapper" ref={emojiPickerRef}>
+                <input
+                  type="text"
+                  className="emoji-input"
+                  value={newEmoji}
+                  onChange={(e) => setNewEmoji(e.target.value)}
+                  placeholder="😀"
+                  maxLength={2}
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  readOnly
+                />
+                {showEmojiPicker && (
+                  <div className="emoji-picker-container">
+                    <EmojiPicker onEmojiClick={handleEmojiClick} />
+                  </div>
+                )}
+              </div>
+              <input
+                type="color"
+                className="color-input"
+                value={newColor}
+                onChange={(e) => setNewColor(e.target.value)}
+                title="Choisir une couleur"
+              />
+            </div>
+            <input
+              type="text"
+              className="tag-label-input"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="Nom du tag"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+            />
+            <div className="form-actions-inline">
+              <button className="btn-cancel-tag" onClick={cancelForm}>
+                Annuler
+              </button>
+              <button className="btn-save-tag" onClick={handleAddTag}>
+                {editingTag ? 'Modifier' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="tags-container">
         {/* Sidebar */}
@@ -151,40 +267,9 @@ const TagsPage = () => {
               <div className="tags-section">
                 <h2>{selectedFieldData.label}</h2>
 
-                {/* Add Tag Form */}
-                <div className="add-tag-form">
-                  <input
-                    type="text"
-                    className="emoji-input"
-                    value={newEmoji}
-                    onChange={(e) => setNewEmoji(e.target.value)}
-                    placeholder="😀"
-                    maxLength={2}
-                  />
-                  <input
-                    type="color"
-                    className="color-input"
-                    value={newColor}
-                    onChange={(e) => setNewColor(e.target.value)}
-                    title="Choisir une couleur"
-                  />
-                  <input
-                    type="text"
-                    className="tag-label-input"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Nom du tag"
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                  />
-                  <button className="btn-add-tag" onClick={handleAddTag}>
-                    + Ajouter
-                  </button>
-                </div>
-
                 {/* All Tags with Drag & Drop */}
                 {allTags.length > 0 ? (
                   <div className="tags-list">
-                    <h3>Tous les tags</h3>
                     <p className="tags-hint">Glissez-déposez pour réorganiser l'ordre</p>
 
                     <DragDropContext onDragEnd={handleDragEnd}>
@@ -210,12 +295,20 @@ const TagsPage = () => {
                                       style={{ backgroundColor: tag.color || '#E1306C' }}
                                     ></div>
                                     <span className="tag-display">{tag.label}</span>
-                                    <button
-                                      className="tag-delete-btn"
-                                      onClick={() => handleDeleteTag(selectedField, tag.value)}
-                                    >
-                                      ✕
-                                    </button>
+                                    <div className="tag-actions">
+                                      <button
+                                        className="tag-edit-btn"
+                                        onClick={() => handleEditTag(tag)}
+                                      >
+                                        ✏️
+                                      </button>
+                                      <button
+                                        className="tag-delete-btn"
+                                        onClick={() => handleDeleteTag(selectedField, tag.value)}
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
                               </Draggable>
