@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../contexts/AppContext';
 import '../styles/Tags.css';
 
@@ -9,6 +10,7 @@ const TagsPage = () => {
   const [selectedField, setSelectedField] = useState('');
   const [newTag, setNewTag] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
+  const [newColor, setNewColor] = useState('#E1306C');
 
   // Scroll to top on mount
   useEffect(() => {
@@ -25,13 +27,14 @@ const TagsPage = () => {
     }
   }, [selectFields, selectedField]);
 
-  const handleAddTag = () => {
+  const handleAddTag = async () => {
     if (!newTag || !selectedField) return;
 
     const tagValue = newEmoji ? `${newEmoji} ${newTag}` : newTag;
     const newTagObj = {
       value: newTag,
       label: tagValue,
+      color: newColor,
       class: `tag-${newTag.toLowerCase().replace(/\s+/g, '-')}`
     };
 
@@ -41,21 +44,56 @@ const TagsPage = () => {
     };
 
     setCustomTags(updatedTags);
-    saveContacts(null, true);
+    
+    // Save with explicit metadata
+    await saveContacts(null, true, {
+      customTags: updatedTags,
+      customFields: [],
+      defaultFields
+    });
 
     setNewTag('');
     setNewEmoji('');
+    setNewColor('#E1306C');
   };
 
-  const handleDeleteTag = (fieldId, tagValue) => {
+  const handleDeleteTag = async (fieldId, tagValue) => {
     if (window.confirm('Supprimer ce tag ?')) {
       const updatedTags = {
         ...customTags,
         [fieldId]: customTags[fieldId].filter(t => t.value !== tagValue)
       };
       setCustomTags(updatedTags);
-      saveContacts(null, true);
+      
+      // Save with explicit metadata
+      await saveContacts(null, true, {
+        customTags: updatedTags,
+        customFields: [],
+        defaultFields
+      });
     }
+  };
+
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(customTags[selectedField] || []);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    const updatedTags = {
+      ...customTags,
+      [selectedField]: items
+    };
+
+    setCustomTags(updatedTags);
+    
+    // Save with explicit metadata
+    await saveContacts(null, true, {
+      customTags: updatedTags,
+      customFields: [],
+      defaultFields
+    });
   };
 
   const getFieldIcon = (fieldId) => {
@@ -68,8 +106,7 @@ const TagsPage = () => {
   };
 
   const selectedFieldData = selectFields.find(f => f.id === selectedField);
-  const defaultTags = selectedFieldData?.tags || [];
-  const customFieldTags = customTags[selectedField] || [];
+  const allTags = customTags[selectedField] || [];
 
   return (
     <div className="tags-page">
@@ -90,9 +127,7 @@ const TagsPage = () => {
           <h3>Champs</h3>
           <div className="field-list">
             {selectFields.map(field => {
-              const customCount = customTags[field.id]?.length || 0;
-              const defaultCount = field.tags?.length || 0;
-              const totalCount = defaultCount + customCount;
+              const tagCount = customTags[field.id]?.length || 0;
 
               return (
                 <button
@@ -102,7 +137,7 @@ const TagsPage = () => {
                 >
                   <span className="field-icon">{getFieldIcon(field.id)}</span>
                   <span className="field-label">{field.label}</span>
-                  <span className="field-count">{totalCount}</span>
+                  <span className="field-count">{tagCount}</span>
                 </button>
               );
             })}
@@ -127,6 +162,13 @@ const TagsPage = () => {
                     maxLength={2}
                   />
                   <input
+                    type="color"
+                    className="color-input"
+                    value={newColor}
+                    onChange={(e) => setNewColor(e.target.value)}
+                    title="Choisir une couleur"
+                  />
+                  <input
                     type="text"
                     className="tag-label-input"
                     value={newTag}
@@ -139,42 +181,54 @@ const TagsPage = () => {
                   </button>
                 </div>
 
-                {/* Default Tags */}
-                {defaultTags.length > 0 && (
+                {/* All Tags with Drag & Drop */}
+                {allTags.length > 0 ? (
                   <div className="tags-list">
-                    <h3>Tags par défaut</h3>
-                    <div className="tags-grid">
-                      {defaultTags.map((tag, index) => (
-                        <div key={index} className="tag-card">
-                          <span className="tag-display">{tag.label || tag.value || tag}</span>
-                          <span className="tag-default-badge">Par défaut</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                    <h3>Tous les tags</h3>
+                    <p className="tags-hint">Glissez-déposez pour réorganiser l'ordre</p>
 
-                {/* Custom Tags */}
-                {customFieldTags.length > 0 ? (
-                  <div className="tags-list">
-                    <h3>Tags personnalisés</h3>
-                    <div className="tags-grid">
-                      {customFieldTags.map((tag, index) => (
-                        <div key={index} className="tag-card">
-                          <span className="tag-display">{tag.label}</span>
-                          <button
-                            className="tag-delete-btn"
-                            onClick={() => handleDeleteTag(selectedField, tag.value)}
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="tags">
+                        {(provided) => (
+                          <div
+                            className="tags-grid"
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
                           >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                            {allTags.map((tag, index) => (
+                              <Draggable key={tag.value} draggableId={tag.value} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`tag-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                                  >
+                                    <div className="drag-handle-tag">⋮⋮</div>
+                                    <div
+                                      className="tag-color-indicator"
+                                      style={{ backgroundColor: tag.color || '#E1306C' }}
+                                    ></div>
+                                    <span className="tag-display">{tag.label}</span>
+                                    <button
+                                      className="tag-delete-btn"
+                                      onClick={() => handleDeleteTag(selectedField, tag.value)}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </div>
                 ) : (
                   <div className="no-tags">
-                    Aucun tag personnalisé pour ce champ
+                    Aucun tag pour ce champ. Créez-en un !
                   </div>
                 )}
               </div>
