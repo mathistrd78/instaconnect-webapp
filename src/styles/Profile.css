@@ -21,7 +21,6 @@
   color: var(--text-secondary);
 }
 
-/* Sections */
 .profile-section {
   background: var(--surface);
   border-radius: 16px;
@@ -37,7 +36,6 @@
   margin-bottom: 20px;
 }
 
-/* Account Info */
 .account-info {
   display: flex;
   flex-direction: column;
@@ -82,7 +80,6 @@
   text-decoration: underline;
 }
 
-/* Stats Cards Grid */
 .profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -121,7 +118,6 @@
   font-weight: 500;
 }
 
-/* Setting Item */
 .setting-item {
   display: flex;
   justify-content: space-between;
@@ -169,6 +165,7 @@
   display: inline-block;
   width: 52px;
   height: 28px;
+  cursor: pointer;
 }
 
 .switch input {
@@ -187,6 +184,7 @@
   background-color: var(--border-color);
   transition: 0.3s;
   border-radius: 28px;
+  pointer-events: none;
 }
 
 .slider:before {
@@ -209,14 +207,12 @@ input:checked + .slider:before {
   transform: translateX(24px);
 }
 
-/* About Info */
 .about-info {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Danger Zone */
 .danger-zone {
   margin-top: 32px;
   padding-top: 32px;
@@ -243,7 +239,6 @@ input:checked + .slider:before {
   transform: translateY(-2px);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .profile-page {
     padding: 16px;
