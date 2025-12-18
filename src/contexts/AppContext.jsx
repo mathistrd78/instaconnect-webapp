@@ -315,6 +315,7 @@ export const AppProvider = ({ children }) => {
     updateContact,
     deleteContact,
     defaultFields,
+    setDefaultFields,
     customFields,
     setCustomFields,
     customTags,
