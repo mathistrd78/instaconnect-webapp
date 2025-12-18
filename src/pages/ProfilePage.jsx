@@ -60,6 +60,25 @@ const ProfilePage = () => {
     }
   };
 
+  const handleRemoveDuplicates = async () => {
+    if (window.confirm('⚠️ Supprimer tous les doublons dans vos listes d\'unfollowers ?')) {
+      try {
+        const { removeDuplicatesFromUnfollowers } = await import('../scripts/removeDuplicates');
+        const result = await removeDuplicatesFromUnfollowers(currentUser.uid);
+        
+        if (result.success) {
+          alert(`✅ Doublons supprimés avec succès !\n\nNormal: ${result.stats.normalUnfollowers}\nÀ ne plus suivre: ${result.stats.doNotFollowList}\nUnfollowers: ${result.stats.unfollowers}`);
+          window.location.reload();
+        } else {
+          alert('❌ Erreur : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error removing duplicates:', error);
+        alert('❌ Erreur lors de la suppression des doublons');
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -184,6 +203,9 @@ const ProfilePage = () => {
       </section>
 
       <div className="danger-zone">
+        <button className="btn-remove-duplicates" onClick={handleRemoveDuplicates}>
+          🧹 Supprimer les doublons
+        </button>
         <button className="btn-migrate-tags" onClick={handleMigrateTags}>
           🔄 Migrer les tags
         </button>
