@@ -62,11 +62,29 @@ const UnfollowersPage = () => {
   const getEmptyMessage = () => {
     switch (activeView) {
       case 'unfollowers':
-        return 'Aucun contact dans cette liste. Veuillez lancer une nouvelle analyse.';
+        return (
+          <>
+            Aucun contact dans cette liste.
+            <br />
+            Veuillez lancer une nouvelle analyse.
+          </>
+        );
       case 'normal':
-        return 'Aucun contact dans cette liste. Veuillez taguez des personnes avec le bouton ✅ sur la liste des unfollowers.';
+        return (
+          <>
+            Aucun contact dans cette liste.
+            <br />
+            Veuillez taguez des personnes avec le bouton ✅ sur la liste des unfollowers.
+          </>
+        );
       case 'unfollow':
-        return 'Aucun contact dans cette liste. Veuillez taguez des personnes avec le bouton ❌ sur la liste des unfollowers.';
+        return (
+          <>
+            Aucun contact dans cette liste.
+            <br />
+            Veuillez taguez des personnes avec le bouton ❌ sur la liste des unfollowers.
+          </>
+        );
       default:
         return 'Aucun contact dans cette liste';
     }
@@ -195,7 +213,7 @@ const UnfollowersPage = () => {
             <div className="content-header">
               <h2>Unfollowers normaux</h2>
               <p className="content-description">
-                Classifiez les comptes qui ne vous suivent pas entre Célébrités, Marque, Compte désactivé
+                Classifiez les comptes qui ne vous suivent pas entre célébrité, marque, compte désactivé
               </p>
             </div>
             {renderContactsList(normalUnfollowers, false)}
@@ -207,7 +225,7 @@ const UnfollowersPage = () => {
             <div className="content-header">
               <h2>À ne plus suivre</h2>
               <p className="content-description">
-                Comptes que vous avez décidé d'unfollow, a ne plus suivre de nouveau
+                Comptes que vous avez décidé d'unfollow, à ne plus suivre de nouveau
               </p>
             </div>
             {renderContactsList(toUnfollow, false)}
