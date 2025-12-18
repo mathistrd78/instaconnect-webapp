@@ -69,16 +69,8 @@ const StatsPage = () => {
 
   // Colors for pie chart
   const colors = [
-    '#E1306C', // Pink
-    '#C13584', // Purple
-    '#F77737', // Orange
-    '#FCAF45', // Yellow
-    '#833AB4', // Deep purple
-    '#FD1D1D', // Red
-    '#405DE6', // Blue
-    '#5B51D8', // Indigo
-    '#C32AA3', // Magenta
-    '#F56040'  // Coral
+    '#E1306C', '#C13584', '#F77737', '#FCAF45', '#833AB4',
+    '#FD1D1D', '#405DE6', '#5B51D8', '#C32AA3', '#F56040'
   ];
 
   const activeField = categorizableFields.find(f => f.id === activeTab);
@@ -90,7 +82,7 @@ const StatsPage = () => {
   const createPieChart = (data) => {
     if (data.length === 0) return [];
 
-    let currentAngle = -90; // Start from top
+    let currentAngle = -90;
     const segments = data.map((item, index) => {
       const percentage = parseFloat(item.percentage);
       const angle = (percentage / 100) * 360;
@@ -134,29 +126,20 @@ const StatsPage = () => {
     };
   };
 
-  // Navigate to contacts page with filter
   const handleLegendClick = (value) => {
     if (activeField) {
-      // Build filter object
-      const filters = {
-        [activeField.id]: [value]
-      };
-      // Navigate with state
+      const filters = { [activeField.id]: [value] };
       navigate('/app/contacts', { state: { filters } });
     }
   };
 
   return (
     <div className="stats-page">
-      {/* Header */}
       <div className="stats-header">
         <h1>📊 Statistiques</h1>
-        <p className="stats-subtitle">
-          Visualisez vos données de contacts
-        </p>
+        <p className="stats-subtitle">Visualisez vos données de contacts</p>
       </div>
 
-      {/* Summary Cards */}
       <div className="stats-summary">
         <div className="stat-card">
           <div className="stat-info">
@@ -164,14 +147,12 @@ const StatsPage = () => {
             <div className="stat-label">Total contacts</div>
           </div>
         </div>
-
         <div className="stat-card">
           <div className="stat-info">
             <div className="stat-value">{stats.complete}</div>
             <div className="stat-label">Profils complets</div>
           </div>
         </div>
-
         <div className="stat-card">
           <div className="stat-info">
             <div className="stat-value">{stats.incomplete}</div>
@@ -180,7 +161,6 @@ const StatsPage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
       {categorizableFields.length > 0 && (
         <>
           <div className="stats-tabs">
@@ -195,7 +175,6 @@ const StatsPage = () => {
             ))}
           </div>
 
-          {/* Chart Section */}
           <div className="stats-chart-section">
             {chartData.length === 0 ? (
               <div className="no-data">
@@ -204,7 +183,6 @@ const StatsPage = () => {
               </div>
             ) : (
               <div className="chart-layout">
-                {/* Legend on left */}
                 <div className="chart-legend">
                   {chartData.map((item, index) => (
                     <div 
@@ -226,7 +204,6 @@ const StatsPage = () => {
                   ))}
                 </div>
 
-                {/* Pie Chart on right */}
                 <div className="pie-chart-container">
                   <svg viewBox="0 0 240 240" className="pie-chart">
                     {pieSegments.map((segment, index) => (
@@ -237,11 +214,9 @@ const StatsPage = () => {
                         className="pie-segment"
                       />
                     ))}
-                    {/* Center circle for donut effect */}
                     <circle cx="120" cy="120" r="60" fill="var(--surface)" />
                     <text
-                      x="120"
-                      y="115"
+                      x="120" y="115"
                       textAnchor="middle"
                       fontSize="28"
                       fontWeight="700"
@@ -250,8 +225,7 @@ const StatsPage = () => {
                       {totalDefined}
                     </text>
                     <text
-                      x="120"
-                      y="135"
+                      x="120" y="135"
                       textAnchor="middle"
                       fontSize="14"
                       fill="var(--text-secondary)"
