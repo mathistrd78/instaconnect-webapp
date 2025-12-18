@@ -9,7 +9,6 @@ const ProfilePage = () => {
   const { currentUser } = useAuth();
   const { contacts, darkMode, toggleDarkMode } = useApp();
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -41,11 +40,6 @@ const ProfilePage = () => {
         alert('Erreur lors de la suppression du compte');
       }
     }
-  };
-
-  const handleToggleDarkMode = () => {
-    console.log('Toggle dark mode clicked'); // Debug
-    toggleDarkMode();
   };
 
   return (
@@ -110,14 +104,21 @@ const ProfilePage = () => {
               {darkMode ? 'Activé' : 'Désactivé'}
             </div>
           </div>
-          <label className="switch" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="switch" 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleDarkMode();
+            }}
+          >
             <input 
               type="checkbox" 
-              checked={darkMode} 
-              onChange={handleToggleDarkMode}
+              checked={darkMode}
+              onChange={() => {}}
+              readOnly
             />
             <span className="slider"></span>
-          </label>
+          </div>
         </div>
       </section>
 
