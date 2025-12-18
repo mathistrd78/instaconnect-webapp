@@ -11,10 +11,18 @@ const UnfollowersPage = () => {
   const { contacts, updateContact } = useApp();
   const { currentUser } = useAuth();
   const [activeView, setActiveView] = useState('unfollowers');
+  const [normalFilter, setNormalFilter] = useState('all'); // all, disabled, business, celebrity
   const [unfollowersData, setUnfollowersData] = useState(null);
   const [normalUnfollowersList, setNormalUnfollowersList] = useState([]);
+  const [normalCategories, setNormalCategories] = useState({});
   const [doNotFollowList, setDoNotFollowList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Reset search when changing view
+  useEffect(() => {
+    setSearchTerm('');
+    setNormalFilter('all');
+  }, [activeView]);
 
   // Load unfollowers data from Firebase on mount
   useEffect(() => {
@@ -45,6 +53,10 @@ const UnfollowersPage = () => {
           setNormalUnfollowersList(data.normalUnfollowers);
         }
         
+        if (data.normalCategories) {
+          setNormalCategories(data.normalCategories);
+        }
+        
         if (data.doNotFollowList) {
           setDoNotFollowList(data.doNotFollowList);
         }
@@ -60,6 +72,14 @@ const UnfollowersPage = () => {
   const unfollowers = unfollowersData?.unfollowers || [];
   const normalUnfollowers = normalUnfollowersList || [];
   const toUnfollow = doNotFollowList || [];
+
+  // Filter normal unfollowers by category
+  const getFilteredNormalUnfollowers = () => {
+    if (normalFilter === 'all') return normalUnfollowers;
+    return normalUnfollowers.filter(username => 
+      normalCategories[username] === normalFilter
+    );
+  };
 
   // Filter by search
   const filterBySearch = (usernamesList) => {
@@ -102,6 +122,16 @@ const UnfollowersPage = () => {
   const handleTagAsNormal = async (username) => {
     // Check if already in list (prevent duplicates)
     if (normalUnfollowersList.includes(username)) {
+      // Remove from unfollowers anyway
+      const newUnfollowers = unfollowers.filter(u => u !== username);
+      const updatedData = {
+        ...unfollowersData,
+        unfollowers: newUnfollowers
+      };
+      setUnfollowersData(updatedData);
+      await saveToFirebase({
+        unfollowersData: updatedData
+      });
       return;
     }
 
@@ -120,13 +150,24 @@ const UnfollowersPage = () => {
     // Save to Firebase
     await saveToFirebase({
       unfollowersData: updatedData,
-      normalUnfollowers: newNormalList
+      normalUnfollowers: newNormalList,
+      normalCategories
     });
   };
 
   const handleTagAsUnfollow = async (username) => {
     // Check if already in list (prevent duplicates)
     if (doNotFollowList.includes(username)) {
+      // Remove from unfollowers anyway
+      const newUnfollowers = unfollowers.filter(u => u !== username);
+      const updatedData = {
+        ...unfollowersData,
+        unfollowers: newUnfollowers
+      };
+      setUnfollowersData(updatedData);
+      await saveToFirebase({
+        unfollowersData: updatedData
+      });
       return;
     }
 
@@ -158,45 +199,70 @@ const UnfollowersPage = () => {
     }
   };
 
-  const handleRemoveTag = async (username) => {
-    // Determine which list it's in
-    if (normalUnfollowersList.includes(username)) {
-      const newList = normalUnfollowersList.filter(u => u !== username);
-      setNormalUnfollowersList(newList);
-
-      // Add back to unfollowers (prevent duplicates)
-      const newUnfollowers = unfollowers.includes(username) 
-        ? unfollowers 
-        : [...unfollowers, username];
-      const updatedData = {
-        ...unfollowersData,
-        unfollowers: newUnfollowers
-      };
-      setUnfollowersData(updatedData);
-
-      await saveToFirebase({
-        unfollowersData: updatedData,
-        normalUnfollowers: newList
-      });
-    } else if (doNotFollowList.includes(username)) {
-      const newList = doNotFollowList.filter(u => u !== username);
-      setDoNotFollowList(newList);
-
-      // Add back to unfollowers (prevent duplicates)
-      const newUnfollowers = unfollowers.includes(username) 
-        ? unfollowers 
-        : [...unfollowers, username];
-      const updatedData = {
-        ...unfollowersData,
-        unfollowers: newUnfollowers
-      };
-      setUnfollowersData(updatedData);
-
-      await saveToFirebase({
-        unfollowersData: updatedData,
-        doNotFollowList: newList
-      });
+  const handleToggleCategory = async (username, category) => {
+    const newCategories = { ...normalCategories };
+    
+    // Toggle: if already this category, remove it; otherwise set it
+    if (newCategories[username] === category) {
+      delete newCategories[username];
+    } else {
+      newCategories[username] = category;
     }
+    
+    setNormalCategories(newCategories);
+    
+    await saveToFirebase({
+      normalCategories: newCategories
+    });
+  };
+
+  const handleRemoveFromNormal = async (username) => {
+    const newList = normalUnfollowersList.filter(u => u !== username);
+    setNormalUnfollowersList(newList);
+
+    // Remove category too
+    const newCategories = { ...normalCategories };
+    delete newCategories[username];
+    setNormalCategories(newCategories);
+
+    // Add back to unfollowers (prevent duplicates)
+    const newUnfollowers = unfollowers.includes(username) 
+      ? unfollowers 
+      : [...unfollowers, username];
+    const updatedData = {
+      ...unfollowersData,
+      unfollowers: newUnfollowers
+    };
+    setUnfollowersData(updatedData);
+
+    await saveToFirebase({
+      unfollowersData: updatedData,
+      normalUnfollowers: newList,
+      normalCategories: newCategories
+    });
+
+    // Switch back to unfollowers view
+    setActiveView('unfollowers');
+  };
+
+  const handleRemoveTag = async (username) => {
+    const newList = doNotFollowList.filter(u => u !== username);
+    setDoNotFollowList(newList);
+
+    // Add back to unfollowers (prevent duplicates)
+    const newUnfollowers = unfollowers.includes(username) 
+      ? unfollowers 
+      : [...unfollowers, username];
+    const updatedData = {
+      ...unfollowersData,
+      unfollowers: newUnfollowers
+    };
+    setUnfollowersData(updatedData);
+
+    await saveToFirebase({
+      unfollowersData: updatedData,
+      doNotFollowList: newList
+    });
 
     // Switch back to unfollowers view
     setActiveView('unfollowers');
@@ -220,6 +286,8 @@ const UnfollowersPage = () => {
   };
 
   const getEmptyMessage = () => {
+    if (searchTerm) return 'Aucun résultat';
+    
     switch (activeView) {
       case 'unfollowers':
         return (
@@ -250,7 +318,7 @@ const UnfollowersPage = () => {
     }
   };
 
-  const renderContactsList = (usernamesList, showActions = true) => {
+  const renderUnfollowersList = (usernamesList) => {
     const filteredList = filterBySearch(usernamesList);
     const grouped = groupByLetter(filteredList);
 
@@ -258,7 +326,7 @@ const UnfollowersPage = () => {
       return (
         <div className="empty-state">
           <span className="empty-icon">📭</span>
-          <p>{searchTerm ? 'Aucun résultat' : getEmptyMessage()}</p>
+          <p>{getEmptyMessage()}</p>
         </div>
       );
     }
@@ -279,32 +347,139 @@ const UnfollowersPage = () => {
                       @{username}
                     </div>
                   </div>
-                  {showActions ? (
+                  <div className="unfollower-actions">
+                    <button
+                      className="btn-tag-normal"
+                      onClick={() => handleTagAsNormal(username)}
+                      title="Marquer comme unfollower normal"
+                    >
+                      ✅
+                    </button>
+                    <button
+                      className="btn-tag-unfollow"
+                      onClick={() => handleTagAsUnfollow(username)}
+                      title="À ne plus suivre"
+                    >
+                      ❌
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderNormalUnfollowersList = () => {
+    const filteredByCategory = getFilteredNormalUnfollowers();
+    const filteredBySearch = filterBySearch(filteredByCategory);
+    const grouped = groupByLetter(filteredBySearch);
+
+    if (filteredBySearch.length === 0) {
+      return (
+        <div className="empty-state">
+          <span className="empty-icon">📭</span>
+          <p>{getEmptyMessage()}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="contacts-list">
+        {grouped.map(group => (
+          <div key={group.letter} className="letter-group">
+            <div className="letter-divider">{group.letter}</div>
+            <div className="contacts-group">
+              {group.usernames.map(username => {
+                const category = normalCategories[username];
+                return (
+                  <div key={username} className="unfollower-card">
+                    <div className="unfollower-info">
+                      <div 
+                        className="unfollower-name"
+                        onClick={() => openInstagram(username)}
+                      >
+                        @{username}
+                      </div>
+                    </div>
                     <div className="unfollower-actions">
                       <button
-                        className="btn-tag-normal"
-                        onClick={() => handleTagAsNormal(username)}
-                        title="Marquer comme unfollower normal"
+                        className={`btn-category ${category === 'disabled' ? 'active' : ''}`}
+                        onClick={() => handleToggleCategory(username, 'disabled')}
+                        title="Compte désactivé"
                       >
-                        ✅
+                        🚫
                       </button>
                       <button
-                        className="btn-tag-unfollow"
-                        onClick={() => handleTagAsUnfollow(username)}
-                        title="À ne plus suivre"
+                        className={`btn-category ${category === 'business' ? 'active' : ''}`}
+                        onClick={() => handleToggleCategory(username, 'business')}
+                        title="Marque"
+                      >
+                        💼
+                      </button>
+                      <button
+                        className={`btn-category ${category === 'celebrity' ? 'active' : ''}`}
+                        onClick={() => handleToggleCategory(username, 'celebrity')}
+                        title="Célébrité"
+                      >
+                        ⭐
+                      </button>
+                      <button
+                        className="btn-remove-tag"
+                        onClick={() => handleRemoveFromNormal(username)}
+                        title="Retirer de cette liste"
                       >
                         ❌
                       </button>
                     </div>
-                  ) : (
-                    <button
-                      className="btn-remove-tag"
-                      onClick={() => handleRemoveTag(username)}
-                      title="Retirer de cette liste"
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderToUnfollowList = (usernamesList) => {
+    const filteredList = filterBySearch(usernamesList);
+    const grouped = groupByLetter(filteredList);
+
+    if (filteredList.length === 0) {
+      return (
+        <div className="empty-state">
+          <span className="empty-icon">📭</span>
+          <p>{getEmptyMessage()}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="contacts-list">
+        {grouped.map(group => (
+          <div key={group.letter} className="letter-group">
+            <div className="letter-divider">{group.letter}</div>
+            <div className="contacts-group">
+              {group.usernames.map(username => (
+                <div key={username} className="unfollower-card">
+                  <div className="unfollower-info">
+                    <div 
+                      className="unfollower-name"
+                      onClick={() => openInstagram(username)}
                     >
-                      ↩️
-                    </button>
-                  )}
+                      @{username}
+                    </div>
+                  </div>
+                  <button
+                    className="btn-remove-tag"
+                    onClick={() => handleRemoveTag(username)}
+                    title="Retirer de cette liste"
+                  >
+                    ↩️
+                  </button>
                 </div>
               ))}
             </div>
@@ -365,6 +540,36 @@ const UnfollowersPage = () => {
           />
         </div>
 
+        {/* Category filters for Normal Unfollowers */}
+        {activeView === 'normal' && (
+          <div className="category-filters">
+            <button
+              className={`filter-btn ${normalFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setNormalFilter('all')}
+            >
+              Tous
+            </button>
+            <button
+              className={`filter-btn ${normalFilter === 'disabled' ? 'active' : ''}`}
+              onClick={() => setNormalFilter('disabled')}
+            >
+              🚫 Désactivés
+            </button>
+            <button
+              className={`filter-btn ${normalFilter === 'business' ? 'active' : ''}`}
+              onClick={() => setNormalFilter('business')}
+            >
+              💼 Marques
+            </button>
+            <button
+              className={`filter-btn ${normalFilter === 'celebrity' ? 'active' : ''}`}
+              onClick={() => setNormalFilter('celebrity')}
+            >
+              ⭐ Célébrités
+            </button>
+          </div>
+        )}
+
         {activeView === 'unfollowers' && (
           <>
             <div className="content-header">
@@ -373,7 +578,7 @@ const UnfollowersPage = () => {
                 Faites le tri dans vos unfollowers et classifiez les dans des listes
               </p>
             </div>
-            {renderContactsList(unfollowers, true)}
+            {renderUnfollowersList(unfollowers)}
           </>
         )}
 
@@ -385,7 +590,7 @@ const UnfollowersPage = () => {
                 Classifiez les comptes qui ne vous suivent pas entre célébrité, marque, compte désactivé
               </p>
             </div>
-            {renderContactsList(normalUnfollowers, false)}
+            {renderNormalUnfollowersList()}
           </>
         )}
 
@@ -397,7 +602,7 @@ const UnfollowersPage = () => {
                 Comptes que vous avez décidé d'unfollow, à ne plus suivre de nouveau
               </p>
             </div>
-            {renderContactsList(toUnfollow, false)}
+            {renderToUnfollowList(toUnfollow)}
           </>
         )}
       </div>
