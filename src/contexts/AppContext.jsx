@@ -168,11 +168,6 @@ export const AppProvider = ({ children }) => {
         if (userData.customFields) {
           setCustomFields(userData.customFields);
         }
-        // NE PAS charger defaultFields depuis Firebase
-        // Pour toujours utiliser les champs à jour du code
-        // if (userData.defaultFields) {
-        //   setDefaultFields(userData.defaultFields);
-        // }
       }
 
       // Load contacts
@@ -202,21 +197,18 @@ export const AppProvider = ({ children }) => {
       const batch = writeBatch(db);
 
       if (contactsToSave) {
-        // Save specific contacts
         const contactsArray = Array.isArray(contactsToSave) ? contactsToSave : [contactsToSave];
         contactsArray.forEach(contact => {
           const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
           batch.set(contactRef, contact);
         });
       } else if (contacts.length > 0) {
-        // Save all contacts
         contacts.forEach(contact => {
           const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
           batch.set(contactRef, contact);
         });
       }
 
-      // Save metadata if requested
       if (saveMetadata) {
         const userRef = doc(db, 'users', userId);
         batch.set(userRef, {
@@ -278,6 +270,7 @@ export const AppProvider = ({ children }) => {
 
   // Toggle dark mode
   const toggleDarkMode = () => {
+    console.log('toggleDarkMode called, current:', darkMode);
     const newMode = !darkMode;
     setDarkMode(newMode);
     localStorage.setItem('darkMode', newMode.toString());
@@ -287,10 +280,12 @@ export const AppProvider = ({ children }) => {
     } else {
       document.body.classList.remove('dark-mode');
     }
+    console.log('New mode:', newMode);
   };
 
-  // Apply dark mode on mount
+  // Apply dark mode on mount and when darkMode changes
   useEffect(() => {
+    console.log('Applying dark mode:', darkMode);
     if (darkMode) {
       document.body.classList.add('dark-mode');
     } else {
