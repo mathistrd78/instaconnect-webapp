@@ -32,7 +32,7 @@ const DEFAULT_FIELDS = [
     id: 'instagram',
     type: 'text',
     label: 'Instagram',
-    required: false,
+    required: true,
     order: -1
   },
   {
