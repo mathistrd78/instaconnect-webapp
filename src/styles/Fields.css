@@ -1,6 +1,30 @@
+.back-button {
+  padding: 10px 20px;
+  margin-bottom: 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button:hover {
+  background: var(--border-color);
+  transform: translateX(-2px);
+}
+
 .fields-page {
   padding: 32px;
+  min-height: calc(100vh - 70px);
+  background: var(--background);
 }
+
 
 .fields-header {
   margin-bottom: 32px;
@@ -254,24 +278,5 @@
   }
 }
 
-.back-button {
-  padding: 10px 20px;
-  margin-bottom: 24px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.back-button:hover {
-  background: var(--border-color);
-  transform: translateX(-2px);
-}
 
