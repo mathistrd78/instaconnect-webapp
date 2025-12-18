@@ -97,28 +97,6 @@ const DEFAULT_FIELDS = [
   }
 ];
 
-const DEFAULT_TAGS = {
-  relationType: [
-    { value: 'Ami', label: '👥 Ami', class: 'tag-ami' },
-    { value: 'Famille', label: '👨‍👩‍👧 Famille', class: 'tag-famille' },
-    { value: 'Connaissance', label: '🤝 Connaissance', class: 'tag-connaissance' },
-    { value: 'Sexe', label: '❤️ Sexe', class: 'tag-sexe' }
-  ],
-  meetingPlace: [
-    { value: 'IRL', label: '🌍 IRL', class: 'tag-irl' },
-    { value: 'Insta', label: '📸 Insta', class: 'tag-insta' },
-    { value: 'Tinder', label: '🔥 Tinder', class: 'tag-tinder' },
-    { value: 'Hinge', label: '💜 Hinge', class: 'tag-hinge' },
-    { value: 'Soirée Tech', label: '🎵 Soirée Tech', class: 'tag-soiree-tech' }
-  ],
-  discussionStatus: [
-    { value: 'Déjà parlé', label: '💬 Déjà parlé', class: 'tag-deja-parle' },
-    { value: 'Jamais parlé', label: '🤐 Jamais parlé', class: 'tag-jamais-parle' },
-    { value: 'En vu', label: '👀 En vu', class: 'tag-en-vu' },
-    { value: 'En cours', label: '📝 En cours', class: 'tag-en-cours' }
-  ]
-};
-
 export const AppProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [contacts, setContacts] = useState([]);
@@ -135,13 +113,13 @@ export const AppProvider = ({ children }) => {
     return saved === null ? true : saved === 'true';
   });
 
-  // Initialize default tags in fields
+  // Update field tags when customTags change
   useEffect(() => {
     const updatedFields = defaultFields.map(field => {
-      if (field.type === 'select' && DEFAULT_TAGS[field.id]) {
+      if (field.type === 'select' && customTags[field.id]) {
         return {
           ...field,
-          tags: [...DEFAULT_TAGS[field.id], ...(customTags[field.id] || [])]
+          tags: customTags[field.id]
         };
       }
       return field;
@@ -168,11 +146,6 @@ export const AppProvider = ({ children }) => {
         if (userData.customFields) {
           setCustomFields(userData.customFields);
         }
-        // NE PAS charger defaultFields depuis Firebase
-        // On veut toujours utiliser DEFAULT_FIELDS du code
-        // if (userData.defaultFields) {
-        //   setDefaultFields(userData.defaultFields);
-        // }
       }
 
       // Load contacts
