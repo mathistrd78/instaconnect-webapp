@@ -6,33 +6,30 @@
 
 /* Banner */
 .unfollowers-banner {
-  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
-  border-radius: 20px;
-  padding: 32px;
-  margin-bottom: 32px;
-  box-shadow: var(--shadow-lg);
-}
-
-.banner-content {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 32px;
+  border: 2px solid var(--border-color);
 }
 
 .banner-icon {
-  font-size: 64px;
+  font-size: 48px;
 }
 
 .banner-info h1 {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
-  color: white;
-  margin-bottom: 8px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
 }
 
 .banner-description {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -191,12 +188,12 @@
 }
 
 .btn-tag-normal {
-  background: rgba(255, 193, 7, 0.1);
-  color: #FFC107;
+  background: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
 }
 
 .btn-tag-normal:hover {
-  background: #FFC107;
+  background: #4CAF50;
   color: white;
   transform: scale(1.1);
 }
@@ -241,6 +238,7 @@
 .empty-state p {
   font-size: 16px;
   color: var(--text-secondary);
+  max-width: 500px;
 }
 
 /* Responsive */
@@ -250,16 +248,13 @@
   }
 
   .unfollowers-banner {
-    padding: 24px;
-  }
-
-  .banner-content {
+    padding: 20px;
     flex-direction: column;
     text-align: center;
   }
 
   .banner-info h1 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .unfollowers-nav {
