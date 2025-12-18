@@ -7,12 +7,12 @@ const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
-    { id: 'contacts', label: 'Contacts', icon: '👥', path: '/app/contacts' },
-    { id: 'calendar', label: 'Calendrier', icon: '📅', path: '/app/calendrier' },
-    { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
-    { icon: '💔', label: 'Unfollowers', path: '/app/unfollowers' },
-    { id: 'settings', label: 'Paramètres', icon: '⚙️', path: '/app/parametres' }
-  ];
+  { id: 'contacts', label: 'Contacts', icon: '👥', path: '/app/contacts' },
+  { id: 'calendar', label: 'Calendrier', icon: '📅', path: '/app/calendrier' },
+  { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
+  { id: 'unfollowers', label: 'Unfollowers', icon: '💔', path: '/app/unfollowers' },
+  { id: 'settings', label: 'Paramètres', icon: '⚙️', path: '/app/parametres' }
+];
 
   const isActive = (path) => {
     return location.pathname === path;
