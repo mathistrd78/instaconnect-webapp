@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import ContactCard from '../components/ContactCard';
 import ContactModal from '../components/ContactModal';
@@ -7,6 +8,7 @@ import EmptyState from '../components/EmptyState';
 import '../styles/Contacts.css';
 
 const ContactsPage = () => {
+  const location = useLocation();
   const { contacts, getAllFields } = useApp();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +18,15 @@ const ContactsPage = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const letterRefs = useRef({});
   const headerRef = useRef(null);
+
+  // Apply filters from navigation state (from StatsPage)
+  useEffect(() => {
+    if (location.state?.filters) {
+      setActiveFilters(location.state.filters);
+      // Clear navigation state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Detect scroll to show/hide scroll-to-top button
   useEffect(() => {
