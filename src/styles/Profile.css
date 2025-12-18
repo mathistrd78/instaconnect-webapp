@@ -223,6 +223,24 @@ input:checked + .slider:before {
   gap: 12px;
 }
 
+.btn-remove-duplicates {
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 152, 0, 0.1);
+  color: #FF9800;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-remove-duplicates:hover {
+  background: #FF9800;
+  color: white;
+  transform: translateY(-2px);
+}
+
 .btn-migrate-tags {
   padding: 14px 28px;
   border-radius: 12px;
