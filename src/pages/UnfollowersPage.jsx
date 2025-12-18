@@ -231,15 +231,16 @@ const UnfollowersPage = () => {
                 <div key={username} className="unfollower-card">
                   <div className="unfollower-info">
                     <div className="unfollower-name">@{username}</div>
-                    
-                      href={`https://instagram.com/${username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="unfollower-instagram"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Voir le profil →
-                    </a>
+                    <div className="unfollower-instagram">
+                      
+                        href={`https://instagram.com/${username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Voir le profil
+                      </a>
+                    </div>
                   </div>
                   {showActions ? (
                     <div className="unfollower-actions">
