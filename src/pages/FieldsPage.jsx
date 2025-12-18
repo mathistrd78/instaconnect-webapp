@@ -6,7 +6,7 @@ import '../styles/Fields.css';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
-  const { customFields, setCustomFields, defaultFields, setDefaultFields, saveContacts, getAllFields } = useApp();
+  const { customFields, setCustomFields, defaultFields, setDefaultFields, saveContacts, getAllFields, customTags } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [newField, setNewField] = useState({
@@ -26,20 +26,23 @@ const FieldsPage = () => {
   // Get all fields sorted by order
   const allFields = getAllFields();
 
-  const handleAddField = () => {
+  const handleAddField = async () => {
     if (!newField.label) return;
+
+    let updatedDefaultFields = defaultFields;
+    let updatedCustomFields = customFields;
 
     if (editingField) {
       // Update existing field
       if (editingField.isDefault) {
         // Update default field
-        const updatedDefaultFields = defaultFields.map(f =>
+        updatedDefaultFields = defaultFields.map(f =>
           f.id === editingField.id ? { ...f, ...newField } : f
         );
         setDefaultFields(updatedDefaultFields);
       } else {
         // Update custom field
-        const updatedCustomFields = customFields.map(f =>
+        updatedCustomFields = customFields.map(f =>
           f.id === editingField.id ? { ...f, ...newField } : f
         );
         setCustomFields(updatedCustomFields);
@@ -54,10 +57,16 @@ const FieldsPage = () => {
         options: newField.options,
         order: allFields.length
       };
-      setCustomFields([...customFields, field]);
+      updatedCustomFields = [...customFields, field];
+      setCustomFields(updatedCustomFields);
     }
 
-    saveContacts(null, true);
+    // Wait for state update and save to Firebase
+    setTimeout(async () => {
+      await saveContacts(null, true);
+      console.log('✅ Fields saved to Firebase');
+    }, 100);
+
     setNewField({ label: '', type: 'text', required: false, options: [] });
     setShowForm(false);
     setEditingField(null);
@@ -80,10 +89,16 @@ const FieldsPage = () => {
     }, 100);
   };
 
-  const handleDeleteField = (fieldId) => {
+  const handleDeleteField = async (fieldId) => {
     if (window.confirm('Supprimer ce champ ?')) {
-      setCustomFields(customFields.filter(f => f.id !== fieldId));
-      saveContacts(null, true);
+      const updatedCustomFields = customFields.filter(f => f.id !== fieldId);
+      setCustomFields(updatedCustomFields);
+      
+      // Wait and save to Firebase
+      setTimeout(async () => {
+        await saveContacts(null, true);
+        console.log('✅ Field deleted and saved to Firebase');
+      }, 100);
     }
   };
 
@@ -126,7 +141,12 @@ const FieldsPage = () => {
 
     setDefaultFields(updatedDefaultFields);
     setCustomFields(updatedCustomFields);
-    saveContacts(null, true);
+    
+    // Wait and save to Firebase
+    setTimeout(async () => {
+      await saveContacts(null, true);
+      console.log('✅ Field order saved to Firebase');
+    }, 100);
   };
 
   const getFieldIcon = (type) => {
