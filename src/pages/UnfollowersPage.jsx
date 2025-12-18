@@ -59,6 +59,19 @@ const UnfollowersPage = () => {
     });
   };
 
+  const getEmptyMessage = () => {
+    switch (activeView) {
+      case 'unfollowers':
+        return 'Aucun contact dans cette liste. Veuillez lancer une nouvelle analyse.';
+      case 'normal':
+        return 'Aucun contact dans cette liste. Veuillez taguez des personnes avec le bouton ✅ sur la liste des unfollowers.';
+      case 'unfollow':
+        return 'Aucun contact dans cette liste. Veuillez taguez des personnes avec le bouton ❌ sur la liste des unfollowers.';
+      default:
+        return 'Aucun contact dans cette liste';
+    }
+  };
+
   const renderContactsList = (contactsList, showActions = true) => {
     const grouped = groupByLetter(contactsList);
 
@@ -66,7 +79,7 @@ const UnfollowersPage = () => {
       return (
         <div className="empty-state">
           <span className="empty-icon">📭</span>
-          <p>Aucun contact dans cette liste</p>
+          <p>{getEmptyMessage()}</p>
         </div>
       );
     }
@@ -94,7 +107,7 @@ const UnfollowersPage = () => {
                         onClick={() => handleTagAsNormal(contact)}
                         title="Marquer comme unfollower normal"
                       >
-                        ⭐
+                        ✅
                       </button>
                       <button
                         className="btn-tag-unfollow"
@@ -126,14 +139,12 @@ const UnfollowersPage = () => {
     <div className="unfollowers-page">
       {/* Header Banner */}
       <div className="unfollowers-banner">
-        <div className="banner-content">
-          <div className="banner-icon">💔</div>
-          <div className="banner-info">
-            <h1>{unfollowers.length} Unfollowers</h1>
-            <p className="banner-description">
-              Les unfollowers sont des personnes qui vous suivaient auparavant mais qui ne vous suivent plus.
-            </p>
-          </div>
+        <div className="banner-icon">💔</div>
+        <div className="banner-info">
+          <h1>{unfollowers.length} Unfollowers</h1>
+          <p className="banner-description">
+            Les unfollowers sont des personnes que vous suivez mais qui ne vous suivent pas en retour.
+          </p>
         </div>
       </div>
 
@@ -151,7 +162,7 @@ const UnfollowersPage = () => {
           className={`nav-button ${activeView === 'normal' ? 'active' : ''}`}
           onClick={() => setActiveView('normal')}
         >
-          <span className="nav-icon">⭐</span>
+          <span className="nav-icon">✅</span>
           <span className="nav-label">Unfollowers normaux</span>
           <span className="nav-count">{normalUnfollowers.length}</span>
         </button>
@@ -172,7 +183,7 @@ const UnfollowersPage = () => {
             <div className="content-header">
               <h2>Liste des unfollowers</h2>
               <p className="content-description">
-                Classez ces personnes pour les retrouver facilement lors de la prochaine analyse
+                Faites le tri dans vos unfollowers et classifiez les dans des listes
               </p>
             </div>
             {renderContactsList(unfollowers, true)}
@@ -184,7 +195,7 @@ const UnfollowersPage = () => {
             <div className="content-header">
               <h2>Unfollowers normaux</h2>
               <p className="content-description">
-                Marques, célébrités ou comptes qui ne suivent personne
+                Classifiez les comptes qui ne vous suivent pas entre Célébrités, Marque, Compte désactivé
               </p>
             </div>
             {renderContactsList(normalUnfollowers, false)}
@@ -196,7 +207,7 @@ const UnfollowersPage = () => {
             <div className="content-header">
               <h2>À ne plus suivre</h2>
               <p className="content-description">
-                Personnes que vous avez décidé de ne plus suivre
+                Comptes que vous avez décidé d'unfollow, a ne plus suivre de nouveau
               </p>
             </div>
             {renderContactsList(toUnfollow, false)}
