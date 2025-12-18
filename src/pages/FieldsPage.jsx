@@ -61,11 +61,14 @@ const FieldsPage = () => {
       setCustomFields(updatedCustomFields);
     }
 
-    // Wait for state update and save to Firebase
-    setTimeout(async () => {
-      await saveContacts(null, true);
-      console.log('✅ Fields saved to Firebase');
-    }, 100);
+    // Save with explicit values
+    await saveContacts(null, true, {
+      customTags,
+      customFields: updatedCustomFields,
+      defaultFields: updatedDefaultFields
+    });
+
+    console.log('✅ Fields saved with explicit metadata');
 
     setNewField({ label: '', type: 'text', required: false, options: [] });
     setShowForm(false);
@@ -94,11 +97,14 @@ const FieldsPage = () => {
       const updatedCustomFields = customFields.filter(f => f.id !== fieldId);
       setCustomFields(updatedCustomFields);
       
-      // Wait and save to Firebase
-      setTimeout(async () => {
-        await saveContacts(null, true);
-        console.log('✅ Field deleted and saved to Firebase');
-      }, 100);
+      // Save with explicit values
+      await saveContacts(null, true, {
+        customTags,
+        customFields: updatedCustomFields,
+        defaultFields
+      });
+
+      console.log('✅ Field deleted and saved');
     }
   };
 
@@ -118,7 +124,7 @@ const FieldsPage = () => {
     });
   };
 
-  const handleDragEnd = (result) => {
+  const handleDragEnd = async (result) => {
     if (!result.destination) return;
 
     const items = Array.from(allFields);
@@ -142,11 +148,14 @@ const FieldsPage = () => {
     setDefaultFields(updatedDefaultFields);
     setCustomFields(updatedCustomFields);
     
-    // Wait and save to Firebase
-    setTimeout(async () => {
-      await saveContacts(null, true);
-      console.log('✅ Field order saved to Firebase');
-    }, 100);
+    // Save with explicit values
+    await saveContacts(null, true, {
+      customTags,
+      customFields: updatedCustomFields,
+      defaultFields: updatedDefaultFields
+    });
+
+    console.log('✅ Field order saved');
   };
 
   const getFieldIcon = (type) => {
