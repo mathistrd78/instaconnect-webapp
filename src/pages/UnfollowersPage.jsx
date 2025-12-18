@@ -14,6 +14,7 @@ const UnfollowersPage = () => {
   const [unfollowersData, setUnfollowersData] = useState(null);
   const [normalUnfollowersList, setNormalUnfollowersList] = useState([]);
   const [doNotFollowList, setDoNotFollowList] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Load unfollowers data from Firebase on mount
   useEffect(() => {
@@ -60,23 +61,50 @@ const UnfollowersPage = () => {
   const normalUnfollowers = normalUnfollowersList || [];
   const toUnfollow = doNotFollowList || [];
 
+  // Filter by search
+  const filterBySearch = (usernamesList) => {
+    if (!searchTerm) return usernamesList;
+    return usernamesList.filter(username => 
+      username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  // Get first alphabetic letter (ignore special chars)
+  const getFirstLetter = (username) => {
+    const match = username.match(/[a-zA-Z]/);
+    return match ? match[0].toUpperCase() : '#';
+  };
+
   // Group by first letter
   const groupByLetter = (usernamesList) => {
     const grouped = {};
     usernamesList.forEach(username => {
-      const firstLetter = username[0].toUpperCase();
+      const firstLetter = getFirstLetter(username);
       if (!grouped[firstLetter]) {
         grouped[firstLetter] = [];
       }
       grouped[firstLetter].push(username);
     });
-    return Object.keys(grouped).sort().map(letter => ({
+    
+    // Sort letters (# at the end)
+    const letters = Object.keys(grouped).sort((a, b) => {
+      if (a === '#') return 1;
+      if (b === '#') return -1;
+      return a.localeCompare(b);
+    });
+    
+    return letters.map(letter => ({
       letter,
       usernames: grouped[letter]
     }));
   };
 
   const handleTagAsNormal = async (username) => {
+    // Check if already in list (prevent duplicates)
+    if (normalUnfollowersList.includes(username)) {
+      return;
+    }
+
     // Add to normalUnfollowers in Firebase
     const newNormalList = [...normalUnfollowersList, username];
     setNormalUnfollowersList(newNormalList);
@@ -97,6 +125,11 @@ const UnfollowersPage = () => {
   };
 
   const handleTagAsUnfollow = async (username) => {
+    // Check if already in list (prevent duplicates)
+    if (doNotFollowList.includes(username)) {
+      return;
+    }
+
     // Add to doNotFollowList
     const newDoNotFollowList = [...doNotFollowList, username];
     setDoNotFollowList(newDoNotFollowList);
@@ -131,8 +164,10 @@ const UnfollowersPage = () => {
       const newList = normalUnfollowersList.filter(u => u !== username);
       setNormalUnfollowersList(newList);
 
-      // Add back to unfollowers
-      const newUnfollowers = [...unfollowers, username];
+      // Add back to unfollowers (prevent duplicates)
+      const newUnfollowers = unfollowers.includes(username) 
+        ? unfollowers 
+        : [...unfollowers, username];
       const updatedData = {
         ...unfollowersData,
         unfollowers: newUnfollowers
@@ -147,8 +182,10 @@ const UnfollowersPage = () => {
       const newList = doNotFollowList.filter(u => u !== username);
       setDoNotFollowList(newList);
 
-      // Add back to unfollowers
-      const newUnfollowers = [...unfollowers, username];
+      // Add back to unfollowers (prevent duplicates)
+      const newUnfollowers = unfollowers.includes(username) 
+        ? unfollowers 
+        : [...unfollowers, username];
       const updatedData = {
         ...unfollowersData,
         unfollowers: newUnfollowers
@@ -214,13 +251,14 @@ const UnfollowersPage = () => {
   };
 
   const renderContactsList = (usernamesList, showActions = true) => {
-    const grouped = groupByLetter(usernamesList);
+    const filteredList = filterBySearch(usernamesList);
+    const grouped = groupByLetter(filteredList);
 
-    if (usernamesList.length === 0) {
+    if (filteredList.length === 0) {
       return (
         <div className="empty-state">
           <span className="empty-icon">📭</span>
-          <p>{getEmptyMessage()}</p>
+          <p>{searchTerm ? 'Aucun résultat' : getEmptyMessage()}</p>
         </div>
       );
     }
@@ -234,14 +272,11 @@ const UnfollowersPage = () => {
               {group.usernames.map(username => (
                 <div key={username} className="unfollower-card">
                   <div className="unfollower-info">
-                    <div className="unfollower-name">@{username}</div>
-                    <div className="unfollower-instagram">
-                      <button 
-                        onClick={() => openInstagram(username)}
-                        className="instagram-link-button"
-                      >
-                        Voir le profil →
-                      </button>
+                    <div 
+                      className="unfollower-name"
+                      onClick={() => openInstagram(username)}
+                    >
+                      @{username}
                     </div>
                   </div>
                   {showActions ? (
@@ -319,6 +354,17 @@ const UnfollowersPage = () => {
       </div>
 
       <div className="unfollowers-content">
+        {/* Search Bar */}
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="🔍 Rechercher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
         {activeView === 'unfollowers' && (
           <>
             <div className="content-header">
