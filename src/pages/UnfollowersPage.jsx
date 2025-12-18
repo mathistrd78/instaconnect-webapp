@@ -178,6 +178,10 @@ const UnfollowersPage = () => {
     }
   };
 
+  const openInstagram = (username) => {
+    window.open('https://instagram.com/' + username, '_blank');
+  };
+
   const getEmptyMessage = () => {
     switch (activeView) {
       case 'unfollowers':
@@ -232,14 +236,12 @@ const UnfollowersPage = () => {
                   <div className="unfollower-info">
                     <div className="unfollower-name">@{username}</div>
                     <div className="unfollower-instagram">
-                      
-                        href={`https://instagram.com/${username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                      <button 
+                        onClick={() => openInstagram(username)}
+                        className="instagram-link-button"
                       >
-                        Voir le profil
-                      </a>
+                        Voir le profil →
+                      </button>
                     </div>
                   </div>
                   {showActions ? (
@@ -279,7 +281,6 @@ const UnfollowersPage = () => {
 
   return (
     <div className="unfollowers-page">
-      {/* Header Banner */}
       <div className="unfollowers-banner">
         <div className="banner-icon">💔</div>
         <div className="banner-info">
@@ -290,7 +291,6 @@ const UnfollowersPage = () => {
         </div>
       </div>
 
-      {/* Navigation Buttons */}
       <div className="unfollowers-nav">
         <button
           className={`nav-button ${activeView === 'unfollowers' ? 'active' : ''}`}
@@ -318,7 +318,6 @@ const UnfollowersPage = () => {
         </button>
       </div>
 
-      {/* Content */}
       <div className="unfollowers-content">
         {activeView === 'unfollowers' && (
           <>
