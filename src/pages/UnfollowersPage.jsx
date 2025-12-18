@@ -474,11 +474,11 @@ const UnfollowersPage = () => {
                     </div>
                   </div>
                   <button
-                    className="btn-remove-tag"
+                    className="btn-remove-tag-red"
                     onClick={() => handleRemoveTag(username)}
                     title="Retirer de cette liste"
                   >
-                    ↩️
+                    ❌
                   </button>
                 </div>
               ))}
@@ -529,47 +529,6 @@ const UnfollowersPage = () => {
       </div>
 
       <div className="unfollowers-content">
-        {/* Search Bar */}
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="🔍 Rechercher..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {/* Category filters for Normal Unfollowers */}
-        {activeView === 'normal' && (
-          <div className="category-filters">
-            <button
-              className={`filter-btn ${normalFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setNormalFilter('all')}
-            >
-              Tous
-            </button>
-            <button
-              className={`filter-btn ${normalFilter === 'disabled' ? 'active' : ''}`}
-              onClick={() => setNormalFilter('disabled')}
-            >
-              🚫 Désactivés
-            </button>
-            <button
-              className={`filter-btn ${normalFilter === 'business' ? 'active' : ''}`}
-              onClick={() => setNormalFilter('business')}
-            >
-              💼 Marques
-            </button>
-            <button
-              className={`filter-btn ${normalFilter === 'celebrity' ? 'active' : ''}`}
-              onClick={() => setNormalFilter('celebrity')}
-            >
-              ⭐ Célébrités
-            </button>
-          </div>
-        )}
-
         {activeView === 'unfollowers' && (
           <>
             <div className="content-header">
@@ -577,6 +536,15 @@ const UnfollowersPage = () => {
               <p className="content-description">
                 Faites le tri dans vos unfollowers et classifiez les dans des listes
               </p>
+            </div>
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             {renderUnfollowersList(unfollowers)}
           </>
@@ -590,6 +558,41 @@ const UnfollowersPage = () => {
                 Classifiez les comptes qui ne vous suivent pas entre célébrité, marque, compte désactivé
               </p>
             </div>
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="category-filters">
+              <button
+                className={`filter-btn ${normalFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setNormalFilter('all')}
+              >
+                Tous
+              </button>
+              <button
+                className={`filter-btn ${normalFilter === 'disabled' ? 'active' : ''}`}
+                onClick={() => setNormalFilter('disabled')}
+              >
+                🚫 Désactivés
+              </button>
+              <button
+                className={`filter-btn ${normalFilter === 'business' ? 'active' : ''}`}
+                onClick={() => setNormalFilter('business')}
+              >
+                💼 Marques
+              </button>
+              <button
+                className={`filter-btn ${normalFilter === 'celebrity' ? 'active' : ''}`}
+                onClick={() => setNormalFilter('celebrity')}
+              >
+                ⭐ Célébrités
+              </button>
+            </div>
             {renderNormalUnfollowersList()}
           </>
         )}
@@ -601,6 +604,15 @@ const UnfollowersPage = () => {
               <p className="content-description">
                 Comptes que vous avez décidé d'unfollow, à ne plus suivre de nouveau
               </p>
+            </div>
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             {renderToUnfollowList(toUnfollow)}
           </>
