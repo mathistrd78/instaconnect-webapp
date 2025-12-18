@@ -219,11 +219,12 @@ input:checked + .slider:before {
   padding-top: 32px;
   border-top: 2px solid var(--border-color);
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
 }
 
-.btn-remove-duplicates {
+.btn-logout {
   padding: 14px 28px;
   border-radius: 12px;
   border: none;
@@ -235,7 +236,7 @@ input:checked + .slider:before {
   transition: all 0.2s ease;
 }
 
-.btn-remove-duplicates:hover {
+.btn-logout:hover {
   background: #FF9800;
   color: white;
   transform: translateY(-2px);
