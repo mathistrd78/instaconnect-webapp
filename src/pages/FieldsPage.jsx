@@ -177,9 +177,11 @@ const FieldsPage = () => {
             Personnalisez les champs de vos contacts
           </p>
         </div>
-        <button className="btn-add-field" onClick={() => showForm ? cancelForm() : setShowForm(true)}>
-          {showForm ? '✕ Annuler' : '+ Ajouter un champ'}
-        </button>
+        {!showForm && (
+          <button className="btn-add-field" onClick={() => setShowForm(true)}>
+            + Ajouter un champ
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -302,7 +304,6 @@ const FieldsPage = () => {
                               </div>
                             </div>
                             <div className="field-actions">
-                              {field.required && <span className="badge-required">Requis</span>}
                               {!isDefault && (
                                 <>
                                   <button
@@ -319,6 +320,7 @@ const FieldsPage = () => {
                                   </button>
                                 </>
                               )}
+                              {field.required && <span className="badge-required">Requis</span>}
                               {isDefault ? (
                                 <span className="badge-default">Par défaut</span>
                               ) : (
