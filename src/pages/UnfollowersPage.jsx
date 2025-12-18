@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../services/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import '../styles/Unfollowers.css';
 
 const UnfollowersPage = () => {
   const navigate = useNavigate();
   const { contacts, updateContact } = useApp();
+  const { currentUser } = useAuth();
   const [activeView, setActiveView] = useState('unfollowers');
   const [unfollowersData, setUnfollowersData] = useState(null);
   const [normalUnfollowersList, setNormalUnfollowersList] = useState([]);
@@ -14,21 +18,16 @@ const UnfollowersPage = () => {
   // Load unfollowers data from Firebase on mount
   useEffect(() => {
     loadUnfollowersFromFirebase();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   const loadUnfollowersFromFirebase = async () => {
-    const { currentUser } = await import('../contexts/AuthContext').then(m => m.useAuth());
-    
     if (!currentUser) return;
 
     try {
-      const { db } = await import('../services/firebase');
-      const { doc, getDoc } = await import('firebase/firestore');
-      
       const userId = currentUser.uid;
       const userDoc = await getDoc(doc(db, 'users', userId));
 
@@ -167,15 +166,9 @@ const UnfollowersPage = () => {
   };
 
   const saveToFirebase = async (data) => {
-    const AuthContext = await import('../contexts/AuthContext');
-    const { currentUser } = AuthContext.useAuth();
-    
     if (!currentUser) return;
 
     try {
-      const { db } = await import('../services/firebase');
-      const { doc, setDoc } = await import('firebase/firestore');
-      
       const userId = currentUser.uid;
       await setDoc(doc(db, 'users', userId), data, { merge: true });
       
