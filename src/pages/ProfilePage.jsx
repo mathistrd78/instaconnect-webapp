@@ -8,7 +8,6 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const { contacts, darkMode, toggleDarkMode } = useApp();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Get Instagram stats from contacts
   const instagramStats = {
@@ -19,8 +18,6 @@ const ProfilePage = () => {
     pendingRequests: 0
   };
 
-  // Try to get stats from the first contact with Instagram data
-  // (These would normally be stored separately, but for now we'll use placeholder data)
   const totalContacts = contacts.length;
 
   // Format date
@@ -35,10 +32,7 @@ const ProfilePage = () => {
   const handleDeleteAccount = async () => {
     if (window.confirm('⚠️ ATTENTION : Cette action est irréversible. Toutes vos données seront définitivement supprimées. Êtes-vous absolument sûr(e) ?')) {
       try {
-        // TODO: Implement account deletion
         alert('Fonctionnalité de suppression de compte à venir');
-        // await deleteUser(currentUser);
-        // await logout();
       } catch (error) {
         console.error('Error deleting account:', error);
         alert('Erreur lors de la suppression du compte');
@@ -46,8 +40,10 @@ const ProfilePage = () => {
     }
   };
 
+  console.log('ProfilePage rendering'); // Debug
+
   return (
-    <div className="profile-page">
+    <div className="profile-page" style={{ background: 'var(--background)', minHeight: '100vh' }}>
       {/* Header */}
       <div className="profile-header">
         <h1>⚙️ Paramètres</h1>
@@ -63,7 +59,7 @@ const ProfilePage = () => {
         <div className="account-info">
           <div className="info-item">
             <span className="info-label">Email</span>
-            <span className="info-value">{currentUser?.email}</span>
+            <span className="info-value">{currentUser?.email || 'Non disponible'}</span>
           </div>
           <div className="info-item">
             <span className="info-label">Membre depuis</span>
@@ -71,8 +67,8 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="profile-stats">
+        {/* Stats Cards - Row 1 */}
+        <div className="profile-stats-grid">
           <div className="profile-stat-card">
             <div className="stat-value">{totalContacts}</div>
             <div className="stat-label">Contacts</div>
@@ -87,7 +83,8 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="profile-stats">
+        {/* Stats Cards - Row 2 */}
+        <div className="profile-stats-grid">
           <div className="profile-stat-card">
             <div className="stat-value">{instagramStats.unfollowers}</div>
             <div className="stat-label">Unfollowers</div>
@@ -168,11 +165,15 @@ const ProfilePage = () => {
           </div>
           <div className="info-item">
             <span className="info-label">Mentions légales</span>
-            <a href="/mentions-legales" className="info-link">Consulter</a>
+            <a href="/mentions-legales" className="info-link" target="_blank" rel="noopener noreferrer">
+              Consulter
+            </a>
           </div>
           <div className="info-item">
             <span className="info-label">CGU</span>
-            <a href="/cgu" className="info-link">Consulter</a>
+            <a href="/cgu" className="info-link" target="_blank" rel="noopener noreferrer">
+              Consulter
+            </a>
           </div>
           <div className="info-item">
             <span className="info-label">Support</span>
