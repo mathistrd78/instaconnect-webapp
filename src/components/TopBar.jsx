@@ -1,50 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import ContactModal from './ContactModal';
 import '../styles/TopBar.css';
 
 const TopBar = () => {
-  const { currentUser } = useAuth();
-  const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef(null);
 
-  const handleAddContact = () => {
-    setShowModal(true);
-  };
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
 
-  const handleSaveContact = (contact) => {
-    // Cette fonction sera gérée par le modal lui-même via le contexte
-    setShowModal(false);
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const handleNewAnalysis = () => {
-    alert('Fonctionnalité "Nouvelle analyse" à venir');
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-left">
-          <div className="app-name">InstaConnect</div>
-        </div>
-
-        <div className="topbar-right">
-          <button className="btn-new-analysis" onClick={handleNewAnalysis}>
-            📊 Nouvelle analyse
-          </button>
-          <button className="btn-add-contact" onClick={handleAddContact}>
-            + Nouveau contact
-          </button>
-        </div>
+    <div className="topbar">
+      {/* Left: Nouvelle Analyse Button */}
+      <div className="topbar-left">
+        <button
+          className="topbar-btn-analyse"
+          onClick={() => navigate('/app/analyse')}
+          title="Nouvelle analyse Instagram"
+        >
+          🔍 Nouvelle Analyse
+        </button>
       </div>
 
-      {showModal && (
-        <ContactModal
-          contact={null}
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveContact}
-        />
-      )}
-    </>
+      {/* Center: Logo Title */}
+      <div className="topbar-center">
+        <span className="topbar-logo-text">InstaConnect</span>
+      </div>
+
+      {/* Right: User Menu */}
+      <div className="topbar-right">
+        <div className="topbar-user" ref={menuRef}>
+          <button
+            className="topbar-user-btn"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+          >
+            <span className="user-avatar">👤</span>
+            <span className="user-name">{currentUser?.email?.split('@')[0]}</span>
+            <span className="user-arrow">{showUserMenu ? '▲' : '▼'}</span>
+          </button>
+
+          {showUserMenu && (
+            <div className="topbar-user-dropdown">
+              <div className="dropdown-header">
+                <div className="dropdown-email">{currentUser?.email}</div>
+              </div>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item" onClick={handleLogout}>
+                <span className="dropdown-icon">🚪</span>
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
