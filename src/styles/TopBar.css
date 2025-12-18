@@ -1,4 +1,10 @@
+/* TopBar.css */
+
 .topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 70px;
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
@@ -6,19 +12,39 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow);
+  gap: 24px;
+  z-index: 200;
 }
 
+/* Left Section */
 .topbar-left {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 
-.app-name {
-  font-size: 24px;
+/* Center Section */
+.topbar-center {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Right Section */
+.topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.topbar-logo-text {
+  font-size: 28px;
   font-weight: 700;
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   -webkit-background-clip: text;
@@ -26,30 +52,8 @@
   background-clip: text;
 }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn-new-analysis {
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: 2px solid #E1306C;
-  background: transparent;
-  color: #E1306C;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-new-analysis:hover {
-  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
-  color: white;
-}
-
-.btn-add-contact {
+/* Nouvelle Analyse Button */
+.topbar-btn-analyse {
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
@@ -59,25 +63,138 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
-.btn-add-contact:hover {
+.topbar-btn-analyse:hover {
   opacity: 0.9;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
+.topbar-user {
+  position: relative;
+}
+
+.topbar-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topbar-user-btn:hover {
+  background: var(--border-color);
+}
+
+.user-avatar {
+  font-size: 20px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-arrow {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.topbar-user-dropdown {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-email {
+  font-size: 13px;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--border-color);
+}
+
+.dropdown-icon {
+  font-size: 16px;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .topbar {
     padding: 0 16px;
   }
-
-  .app-name {
-    font-size: 18px;
+  
+  .topbar-logo-text {
+    font-size: 22px;
   }
-
-  .btn-new-analysis,
-  .btn-add-contact {
-    padding: 8px 16px;
-    font-size: 13px;
+  
+  .topbar-btn-analyse {
+    font-size: 20px;
+    padding: 8px;
+  }
+  
+  .topbar-btn-analyse span {
+    display: none;
+  }
+  
+  .user-name {
+    display: none;
   }
 }
