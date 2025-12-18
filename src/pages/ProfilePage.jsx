@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
@@ -6,10 +6,9 @@ import '../styles/Profile.css';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const { contacts, darkMode, toggleDarkMode } = useApp();
 
-  // Get Instagram stats from contacts
   const instagramStats = {
     followers: 0,
     following: 0,
@@ -20,7 +19,6 @@ const ProfilePage = () => {
 
   const totalContacts = contacts.length;
 
-  // Format date
   const accountCreationDate = currentUser?.metadata?.creationTime
     ? new Date(currentUser.metadata.creationTime).toLocaleDateString('fr-FR', {
         day: 'numeric',
@@ -40,19 +38,13 @@ const ProfilePage = () => {
     }
   };
 
-  console.log('ProfilePage rendering'); // Debug
-
   return (
-    <div className="profile-page" style={{ background: 'var(--background)', minHeight: '100vh' }}>
-      {/* Header */}
+    <div className="profile-page">
       <div className="profile-header">
         <h1>⚙️ Paramètres</h1>
-        <p className="profile-subtitle">
-          Gérez votre compte et vos préférences
-        </p>
+        <p className="profile-subtitle">Gérez votre compte et vos préférences</p>
       </div>
 
-      {/* Account Information */}
       <section className="profile-section">
         <h2 className="section-title">Informations du compte</h2>
         
@@ -67,7 +59,6 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Stats Cards - Row 1 */}
         <div className="profile-stats-grid">
           <div className="profile-stat-card">
             <div className="stat-value">{totalContacts}</div>
@@ -83,7 +74,6 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Stats Cards - Row 2 */}
         <div className="profile-stats-grid">
           <div className="profile-stat-card">
             <div className="stat-value">{instagramStats.unfollowers}</div>
@@ -100,7 +90,6 @@ const ProfilePage = () => {
         </div>
       </section>
 
-      {/* Appearance */}
       <section className="profile-section">
         <h2 className="section-title">Apparence</h2>
         
@@ -112,49 +101,32 @@ const ProfilePage = () => {
             </div>
           </div>
           <label className="switch">
-            <input
-              type="checkbox"
-              checked={darkMode}
-              onChange={toggleDarkMode}
-            />
+            <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
             <span className="slider"></span>
           </label>
         </div>
       </section>
 
-      {/* Fields Management */}
       <section className="profile-section">
-        <div 
-          className="setting-item clickable"
-          onClick={() => navigate('/app/champs')}
-        >
+        <div className="setting-item clickable" onClick={() => navigate('/app/champs')}>
           <div className="setting-info">
             <div className="setting-label">Gestion des champs</div>
-            <div className="setting-description">
-              Personnalisez les champs de vos contacts
-            </div>
+            <div className="setting-description">Personnalisez les champs de vos contacts</div>
           </div>
           <span className="arrow">→</span>
         </div>
       </section>
 
-      {/* Tags Management */}
       <section className="profile-section">
-        <div 
-          className="setting-item clickable"
-          onClick={() => navigate('/app/tags')}
-        >
+        <div className="setting-item clickable" onClick={() => navigate('/app/tags')}>
           <div className="setting-info">
             <div className="setting-label">Gestion des tags</div>
-            <div className="setting-description">
-              Personnalisez vos étiquettes et catégories
-            </div>
+            <div className="setting-description">Personnalisez vos étiquettes et catégories</div>
           </div>
           <span className="arrow">→</span>
         </div>
       </section>
 
-      {/* About */}
       <section className="profile-section">
         <h2 className="section-title">À propos</h2>
         
@@ -165,31 +137,21 @@ const ProfilePage = () => {
           </div>
           <div className="info-item">
             <span className="info-label">Mentions légales</span>
-            <a href="/mentions-legales" className="info-link" target="_blank" rel="noopener noreferrer">
-              Consulter
-            </a>
+            <a href="/mentions-legales" className="info-link" target="_blank" rel="noopener noreferrer">Consulter</a>
           </div>
           <div className="info-item">
             <span className="info-label">CGU</span>
-            <a href="/cgu" className="info-link" target="_blank" rel="noopener noreferrer">
-              Consulter
-            </a>
+            <a href="/cgu" className="info-link" target="_blank" rel="noopener noreferrer">Consulter</a>
           </div>
           <div className="info-item">
             <span className="info-label">Support</span>
-            <a href="mailto:support@instaconnect.com" className="info-link">
-              support@instaconnect.com
-            </a>
+            <a href="mailto:support@instaconnect.com" className="info-link">support@instaconnect.com</a>
           </div>
         </div>
       </section>
 
-      {/* Delete Account */}
       <div className="danger-zone">
-        <button 
-          className="btn-delete-account"
-          onClick={handleDeleteAccount}
-        >
+        <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
         </button>
       </div>
