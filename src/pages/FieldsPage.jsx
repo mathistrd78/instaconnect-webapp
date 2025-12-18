@@ -1,39 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../contexts/AppContext';
 import '../styles/Fields.css';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
-  const { customFields, setCustomFields, defaultFields, saveContacts } = useApp();
+  const { customFields, setCustomFields, defaultFields, setDefaultFields, saveContacts, getAllFields } = useApp();
   const [showForm, setShowForm] = useState(false);
+  const [editingField, setEditingField] = useState(null);
   const [newField, setNewField] = useState({
     label: '',
     type: 'text',
-    required: false
+    required: false,
+    options: []
   });
+  const [optionInput, setOptionInput] = useState('');
 
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Get all fields sorted by order
+  const allFields = getAllFields();
+
   const handleAddField = () => {
     if (!newField.label) return;
 
-    const field = {
-      id: `custom_${Date.now()}`,
-      label: newField.label,
-      type: newField.type,
-      required: newField.required,
-      order: customFields.length + 100
-    };
+    if (editingField) {
+      // Update existing field
+      if (editingField.isDefault) {
+        // Update default field
+        const updatedDefaultFields = defaultFields.map(f =>
+          f.id === editingField.id ? { ...f, ...newField } : f
+        );
+        setDefaultFields(updatedDefaultFields);
+      } else {
+        // Update custom field
+        const updatedCustomFields = customFields.map(f =>
+          f.id === editingField.id ? { ...f, ...newField } : f
+        );
+        setCustomFields(updatedCustomFields);
+      }
+    } else {
+      // Create new field
+      const field = {
+        id: `custom_${Date.now()}`,
+        label: newField.label,
+        type: newField.type,
+        required: newField.required,
+        options: newField.options,
+        order: allFields.length
+      };
+      setCustomFields([...customFields, field]);
+    }
 
-    setCustomFields([...customFields, field]);
     saveContacts(null, true);
-
-    setNewField({ label: '', type: 'text', required: false });
+    setNewField({ label: '', type: 'text', required: false, options: [] });
     setShowForm(false);
+    setEditingField(null);
+  };
+
+  const handleEditField = (field) => {
+    const isDefault = defaultFields.some(f => f.id === field.id);
+    setEditingField({ ...field, isDefault });
+    setNewField({
+      label: field.label,
+      type: field.type,
+      required: field.required,
+      options: field.options || []
+    });
+    setShowForm(true);
   };
 
   const handleDeleteField = (fieldId) => {
@@ -41,6 +79,48 @@ const FieldsPage = () => {
       setCustomFields(customFields.filter(f => f.id !== fieldId));
       saveContacts(null, true);
     }
+  };
+
+  const handleAddOption = () => {
+    if (!optionInput.trim()) return;
+    setNewField({
+      ...newField,
+      options: [...(newField.options || []), optionInput.trim()]
+    });
+    setOptionInput('');
+  };
+
+  const handleRemoveOption = (index) => {
+    setNewField({
+      ...newField,
+      options: newField.options.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(allFields);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update order property for all fields
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+
+    // Split back into default and custom
+    const updatedDefaultFields = updatedItems.filter(f => 
+      defaultFields.some(df => df.id === f.id)
+    );
+    const updatedCustomFields = updatedItems.filter(f => 
+      customFields.some(cf => cf.id === f.id)
+    );
+
+    setDefaultFields(updatedDefaultFields);
+    setCustomFields(updatedCustomFields);
+    saveContacts(null, true);
   };
 
   const getFieldIcon = (type) => {
@@ -67,6 +147,17 @@ const FieldsPage = () => {
     }
   };
 
+  const isDefaultField = (fieldId) => {
+    return defaultFields.some(f => f.id === fieldId);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingField(null);
+    setNewField({ label: '', type: 'text', required: false, options: [] });
+    setOptionInput('');
+  };
+
   return (
     <div className="fields-page">
       <button className="back-button" onClick={() => navigate('/app/parametres')}>
@@ -80,14 +171,14 @@ const FieldsPage = () => {
             Personnalisez les champs de vos contacts
           </p>
         </div>
-        <button className="btn-add-field" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-add-field" onClick={() => showForm ? cancelForm() : setShowForm(true)}>
           {showForm ? '✕ Annuler' : '+ Ajouter un champ'}
         </button>
       </div>
 
       {showForm && (
         <div className="add-field-form">
-          <h3>Nouveau champ personnalisé</h3>
+          <h3>{editingField ? 'Modifier le champ' : 'Nouveau champ personnalisé'}</h3>
           <div className="form-row">
             <div className="form-group">
               <label>Nom du champ</label>
@@ -113,6 +204,42 @@ const FieldsPage = () => {
               </select>
             </div>
           </div>
+
+          {/* Options for select/radio */}
+          {(newField.type === 'select' || newField.type === 'radio') && (
+            <div className="form-group">
+              <label>Options</label>
+              <div className="options-input">
+                <input
+                  type="text"
+                  value={optionInput}
+                  onChange={(e) => setOptionInput(e.target.value)}
+                  placeholder="Ajouter une option"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddOption()}
+                />
+                <button type="button" className="btn-add-option" onClick={handleAddOption}>
+                  + Ajouter
+                </button>
+              </div>
+              {newField.options && newField.options.length > 0 && (
+                <div className="options-list">
+                  {newField.options.map((option, index) => (
+                    <div key={index} className="option-item">
+                      <span>{option}</span>
+                      <button
+                        type="button"
+                        className="btn-remove-option"
+                        onClick={() => handleRemoveOption(index)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -122,67 +249,80 @@ const FieldsPage = () => {
             Champ obligatoire
           </label>
           <div className="form-actions">
-            <button className="btn-cancel" onClick={() => setShowForm(false)}>
+            <button className="btn-cancel" onClick={cancelForm}>
               Annuler
             </button>
             <button className="btn-save" onClick={handleAddField}>
-              Créer le champ
+              {editingField ? 'Modifier' : 'Créer le champ'}
             </button>
           </div>
         </div>
       )}
 
       <div className="fields-container">
-        {/* Default Fields */}
         <div className="fields-section">
-          <h2>Champs par défaut</h2>
-          <div className="fields-list">
-            {defaultFields.map(field => (
-              <div key={field.id} className="field-card">
-                <div className="field-info">
-                  <div className="field-icon">{getFieldIcon(field.type)}</div>
-                  <div className="field-details">
-                    <div className="field-label">{field.label}</div>
-                    <div className="field-type">{getFieldTypeName(field.type)}</div>
-                  </div>
-                </div>
-                <div className="field-badges">
-                  {field.required && <span className="badge-required">Requis</span>}
-                  <span className="badge-default">Par défaut</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          <h2>Tous les champs</h2>
+          <p className="fields-hint">Glissez-déposez pour réorganiser l'ordre</p>
 
-        {/* Custom Fields */}
-        {customFields.length > 0 && (
-          <div className="fields-section">
-            <h2>Champs personnalisés</h2>
-            <div className="fields-list">
-              {customFields.map(field => (
-                <div key={field.id} className="field-card">
-                  <div className="field-info">
-                    <div className="field-icon">{getFieldIcon(field.type)}</div>
-                    <div className="field-details">
-                      <div className="field-label">{field.label}</div>
-                      <div className="field-type">{getFieldTypeName(field.type)}</div>
-                    </div>
-                  </div>
-                  <div className="field-actions">
-                    {field.required && <span className="badge-required">Requis</span>}
-                    <button
-                      className="btn-delete-field"
-                      onClick={() => handleDeleteField(field.id)}
-                    >
-                      🗑️
-                    </button>
-                  </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="fields">
+              {(provided) => (
+                <div
+                  className="fields-list"
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  {allFields.map((field, index) => (
+                    <Draggable key={field.id} draggableId={field.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`field-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                        >
+                          <div className="drag-handle">⋮⋮</div>
+                          <div className="field-info">
+                            <div className="field-icon">{getFieldIcon(field.type)}</div>
+                            <div className="field-details">
+                              <div className="field-label">{field.label}</div>
+                              <div className="field-type">{getFieldTypeName(field.type)}</div>
+                            </div>
+                          </div>
+                          <div className="field-actions">
+                            {field.required && <span className="badge-required">Requis</span>}
+                            {isDefaultField(field.id) ? (
+                              <span className="badge-default">Par défaut</span>
+                            ) : (
+                              <span className="badge-custom">Personnalisé</span>
+                            )}
+                            {!isDefaultField(field.id) && (
+                              <>
+                                <button
+                                  className="btn-edit-field"
+                                  onClick={() => handleEditField(field)}
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  className="btn-delete-field"
+                                  onClick={() => handleDeleteField(field.id)}
+                                >
+                                  🗑️
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
       </div>
     </div>
   );
