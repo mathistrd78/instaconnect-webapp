@@ -2,6 +2,7 @@
   padding: 32px;
   min-height: calc(100vh - 70px);
   max-width: 1200px;
+  background: var(--background);
 }
 
 .profile-header {
@@ -81,15 +82,15 @@
   text-decoration: underline;
 }
 
-/* Stats Cards */
-.profile-stats {
+/* Stats Cards Grid */
+.profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 16px;
 }
 
-.profile-stats:last-child {
+.profile-stats-grid:last-child {
   margin-bottom: 0;
 }
 
@@ -99,6 +100,7 @@
   padding: 20px;
   text-align: center;
   transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
 }
 
 .profile-stat-card:hover {
@@ -247,7 +249,7 @@ input:checked + .slider:before {
     padding: 16px;
   }
 
-  .profile-stats {
+  .profile-stats-grid {
     grid-template-columns: 1fr;
   }
 
