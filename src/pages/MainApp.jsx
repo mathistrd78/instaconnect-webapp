@@ -1,55 +1,33 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useApp } from '../contexts/AppContext';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import ContactsPage from './ContactsPage';
-import AnalysePage from './AnalysePage';
 import CalendarPage from './CalendarPage';
 import StatsPage from './StatsPage';
 import TagsPage from './TagsPage';
 import FieldsPage from './FieldsPage';
 import ProfilePage from './ProfilePage';
-import LoadingSpinner from '../components/LoadingSpinner';
+import AnalysePage from './AnalysePage';
 import '../styles/MainApp.css';
 
 const MainApp = () => {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { loading } = useApp();
-
-  useEffect(() => {
-    if (!currentUser) {
-      navigate('/auth', { replace: true });
-    }
-  }, [currentUser, navigate]);
-
-  if (loading) {
-    return <LoadingSpinner text="Chargement de vos contacts..." />;
-  }
-
   return (
     <div className="main-app-web">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Main Content Area */}
+      <TopBar />
+      
       <div className="main-content-area">
-        {/* Top Bar */}
-        <TopBar />
-
-        {/* Page Content */}
         <div className="page-content">
           <Routes>
+            <Route path="/" element={<Navigate to="/app/contacts" replace />} />
             <Route path="/contacts" element={<ContactsPage />} />
-            <Route path="/analyse" element={<AnalysePage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/calendrier" element={<CalendarPage />} />
+            <Route path="/statistiques" element={<StatsPage />} />
             <Route path="/tags" element={<TagsPage />} />
-            <Route path="/fields" element={<FieldsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/" element={<ContactsPage />} />
+            <Route path="/champs" element={<FieldsPage />} />
+            <Route path="/parametres" element={<ProfilePage />} />
+            <Route path="/analyse" element={<AnalysePage />} />
           </Routes>
         </div>
       </div>
