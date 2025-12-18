@@ -233,12 +233,15 @@
 .empty-icon {
   font-size: 64px;
   margin-bottom: 16px;
+  display: block;
 }
 
 .empty-state p {
   font-size: 16px;
   color: var(--text-secondary);
   max-width: 500px;
+  line-height: 1.6;
+  text-align: center;
 }
 
 /* Responsive */
