@@ -1,52 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { migrateTags } from '../scripts/migrateTags';
-import { db } from '../services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import '../styles/Profile.css';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const { contacts, darkMode, toggleDarkMode } = useApp();
-  const [instagramStats, setInstagramStats] = useState({
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const instagramStats = {
     followers: 0,
     following: 0,
     unfollowers: 0,
     fans: 0,
     pendingRequests: 0
-  });
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    loadInstagramStats();
-  }, []);
-
-  const loadInstagramStats = async () => {
-    if (!currentUser) return;
-
-    try {
-      const userId = currentUser.uid;
-      const userDoc = await getDoc(doc(db, 'users', userId));
-
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        
-        if (data.unfollowersData) {
-          setInstagramStats({
-            followers: data.unfollowersData.followers?.length || 0,
-            following: data.unfollowersData.following?.length || 0,
-            unfollowers: data.unfollowersData.unfollowers?.length || 0,
-            fans: 0,
-            pendingRequests: 0
-          });
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error loading Instagram stats:', error);
-    }
   };
 
   const totalContacts = contacts.length;
@@ -58,18 +31,6 @@ const ProfilePage = () => {
         year: 'numeric'
       })
     : 'Date inconnue';
-
-  const handleLogout = async () => {
-    if (window.confirm('Se déconnecter ?')) {
-      try {
-        await logout();
-        navigate('/login');
-      } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Erreur lors de la déconnexion');
-      }
-    }
-  };
 
   const handleDeleteAccount = async () => {
     if (window.confirm('⚠️ ATTENTION : Cette action est irréversible. Toutes vos données seront définitivement supprimées. Êtes-vous absolument sûr(e) ?')) {
@@ -99,10 +60,29 @@ const ProfilePage = () => {
     }
   };
 
+  const handleRemoveDuplicates = async () => {
+    if (window.confirm('⚠️ Supprimer tous les doublons dans vos listes d\'unfollowers ?')) {
+      try {
+        const { removeDuplicatesFromUnfollowers } = await import('../scripts/removeDuplicates');
+        const result = await removeDuplicatesFromUnfollowers(currentUser.uid);
+        
+        if (result.success) {
+          alert(`✅ Doublons supprimés avec succès !\n\nNormal: ${result.stats.normalUnfollowers}\nÀ ne plus suivre: ${result.stats.doNotFollowList}\nUnfollowers: ${result.stats.unfollowers}`);
+          window.location.reload();
+        } else {
+          alert('❌ Erreur : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error removing duplicates:', error);
+        alert('❌ Erreur lors de la suppression des doublons');
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-header">
-        <h1>👤 Profil</h1>
+        <h1>⚙️ Paramètres</h1>
         <p className="profile-subtitle">Gérez votre compte et vos préférences</p>
       </div>
 
@@ -223,8 +203,8 @@ const ProfilePage = () => {
       </section>
 
       <div className="danger-zone">
-        <button className="btn-logout" onClick={handleLogout}>
-          🚪 Se déconnecter
+        <button className="btn-remove-duplicates" onClick={handleRemoveDuplicates}>
+          🧹 Supprimer les doublons
         </button>
         <button className="btn-migrate-tags" onClick={handleMigrateTags}>
           🔄 Migrer les tags
