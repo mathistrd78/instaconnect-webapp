@@ -1,0 +1,283 @@
+.unfollowers-page {
+  padding: 32px;
+  min-height: calc(100vh - 70px);
+  background: var(--background);
+}
+
+/* Banner */
+.unfollowers-banner {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.banner-icon {
+  font-size: 64px;
+}
+
+.banner-info h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.banner-description {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+/* Navigation */
+.unfollowers-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  background: var(--surface);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  border-color: #E1306C;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.nav-button.active {
+  border-color: #E1306C;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(193, 53, 132, 0.1) 100%);
+}
+
+.nav-icon {
+  font-size: 32px;
+}
+
+.nav-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nav-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #E1306C;
+}
+
+/* Content */
+.unfollowers-content {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.content-header {
+  margin-bottom: 24px;
+}
+
+.content-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.content-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+/* Contacts List */
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.letter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.letter-divider {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  background: var(--background);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.contacts-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unfollower-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.unfollower-card:hover {
+  border-color: #E1306C;
+  transform: translateX(4px);
+}
+
+.unfollower-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unfollower-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.unfollower-instagram {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.unfollower-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-tag-normal,
+.btn-tag-unfollow,
+.btn-remove-tag {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-tag-normal {
+  background: rgba(255, 193, 7, 0.1);
+  color: #FFC107;
+}
+
+.btn-tag-normal:hover {
+  background: #FFC107;
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-tag-unfollow {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.btn-tag-unfollow:hover {
+  background: #dc3545;
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-remove-tag {
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196F3;
+}
+
+.btn-remove-tag:hover {
+  background: #2196F3;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .unfollowers-page {
+    padding: 16px;
+  }
+
+  .unfollowers-banner {
+    padding: 24px;
+  }
+
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .banner-info h1 {
+    font-size: 28px;
+  }
+
+  .unfollowers-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .unfollowers-content {
+    padding: 20px;
+  }
+
+  .unfollower-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .unfollower-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
