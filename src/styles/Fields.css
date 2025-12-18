@@ -181,12 +181,14 @@
   gap: 8px;
   cursor: pointer;
   color: var(--text-primary);
+  user-select: none;
 }
 
 .checkbox-label input {
   width: 20px;
   height: 20px;
   cursor: pointer;
+  pointer-events: none;
 }
 
 .form-actions {
@@ -356,12 +358,12 @@
 }
 
 .btn-edit-field {
-  background: rgba(0, 123, 255, 0.1);
-  color: #007bff;
+  background: rgba(218, 165, 32, 0.1);
+  color: #DAA520;
 }
 
 .btn-edit-field:hover {
-  background: #007bff;
+  background: #DAA520;
   color: white;
 }
 
