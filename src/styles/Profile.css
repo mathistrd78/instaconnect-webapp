@@ -1,123 +1,181 @@
 .profile-page {
-  min-height: 100vh;
-  background: var(--background);
-  padding-bottom: 20px;
+  padding: 32px;
+  min-height: calc(100vh - 70px);
+  max-width: 1200px;
 }
 
 .profile-header {
-  background: var(--surface);
-  padding: 20px;
-  padding-top: calc(20px + env(safe-area-inset-top));
-  box-shadow: var(--shadow);
-  text-align: center;
+  margin-bottom: 32px;
 }
 
-.profile-header h2 {
-  font-size: 24px;
-  margin: 0;
+.profile-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
-.profile-content {
-  padding: 20px;
+.profile-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
 }
 
+/* Sections */
 .profile-section {
   background: var(--surface);
   border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
   box-shadow: var(--shadow);
 }
 
-.profile-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  letter-spacing: 0.5px;
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
 }
 
-.profile-info-card {
+/* Account Info */
+.account-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.profile-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--primary-gradient);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-}
-
-.profile-email {
-  font-size: 16px;
-  color: var(--text-primary);
-  word-break: break-word;
-  text-align: center;
-}
-
-.profile-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 16px;
+  margin-bottom: 24px;
 }
 
-.profile-stat-item {
-  text-align: center;
-}
-
-.profile-stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 4px;
-}
-
-.profile-stat-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.profile-setting-item {
+.info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.profile-setting-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 16px;
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 15px;
   color: var(--text-primary);
+  font-weight: 500;
 }
 
-.profile-setting-icon {
-  font-size: 20px;
+.info-link {
+  font-size: 15px;
+  color: #E1306C;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
 }
 
-.toggle-switch {
+.info-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Stats Cards */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profile-stats:last-child {
+  margin-bottom: 0;
+}
+
+.profile-stat-card {
+  background: var(--background);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.profile-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.profile-stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.profile-stat-card .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Setting Item */
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  transition: background 0.2s ease;
+}
+
+.setting-item.clickable {
+  cursor: pointer;
+  padding: 16px;
+  margin: -8px -16px;
+  border-radius: 8px;
+}
+
+.setting-item.clickable:hover {
+  background: var(--border-color);
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.setting-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.arrow {
+  font-size: 24px;
+  color: #E1306C;
+  font-weight: 700;
+}
+
+/* Switch Toggle */
+.switch {
   position: relative;
-  width: 50px;
+  display: inline-block;
+  width: 52px;
   height: 28px;
 }
 
-.toggle-switch input {
+.switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.toggle-slider {
+.slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -129,7 +187,7 @@
   border-radius: 28px;
 }
 
-.toggle-slider:before {
+.slider:before {
   position: absolute;
   content: "";
   height: 20px;
@@ -141,47 +199,63 @@
   border-radius: 50%;
 }
 
-input:checked + .toggle-slider {
-  background: var(--primary-gradient);
+input:checked + .slider {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
 }
 
-input:checked + .toggle-slider:before {
-  transform: translateX(22px);
+input:checked + .slider:before {
+  transform: translateX(24px);
 }
 
-.profile-logout-btn {
-  width: 100%;
-  padding: 14px;
-  background: #dc3545;
-  color: white;
-  border: none;
+/* About Info */
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Danger Zone */
+.danger-zone {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 2px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+}
+
+.btn-delete-account {
+  padding: 14px 28px;
   border-radius: 12px;
+  border: none;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.profile-logout-btn:hover {
-  opacity: 0.9;
+.btn-delete-account:hover {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-2px);
 }
 
-.profile-footer {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-secondary);
-}
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 16px;
+  }
 
-.profile-app-name {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
+  .profile-stats {
+    grid-template-columns: 1fr;
+  }
 
-.profile-app-version {
-  font-size: 12px;
-  margin-bottom: 8px;
-}
+  .profile-stat-card {
+    padding: 16px;
+  }
 
-.profile-app-description {
-  font-size: 14px;
+  .profile-stat-card .stat-value {
+    font-size: 24px;
+  }
 }
