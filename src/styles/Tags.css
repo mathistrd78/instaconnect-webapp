@@ -147,6 +147,26 @@
   text-align: center;
   background: var(--surface);
   color: var(--text-primary);
+  cursor: text;
+}
+
+.color-input {
+  width: 60px;
+  height: 48px;
+  padding: 4px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 8px;
 }
 
 .tag-label-input {
@@ -160,7 +180,8 @@
 }
 
 .tag-label-input:focus,
-.emoji-input:focus {
+.emoji-input:focus,
+.color-input:focus {
   outline: none;
   border-color: #E1306C;
 }
@@ -186,6 +207,12 @@
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.tags-hint {
+  font-size: 14px;
+  color: var(--text-secondary);
   margin-bottom: 16px;
 }
 
@@ -196,15 +223,15 @@
 }
 
 .tags-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
 .tag-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
   background: var(--background);
@@ -216,7 +243,31 @@
   border-color: #E1306C;
 }
 
+.tag-card.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.drag-handle-tag {
+  font-size: 16px;
+  color: var(--text-secondary);
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-handle-tag:active {
+  cursor: grabbing;
+}
+
+.tag-color-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .tag-display {
+  flex: 1;
   font-size: 15px;
   font-weight: 500;
   color: var(--text-primary);
@@ -239,16 +290,6 @@
   color: white;
 }
 
-.tag-default-badge {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(0, 123, 255, 0.1);
-  color: #007bff;
-  font-weight: 600;
-  margin-left: 8px;
-}
-
 @media (max-width: 1024px) {
   .tags-container {
     grid-template-columns: 1fr;
@@ -263,8 +304,8 @@
   .add-tag-form {
     flex-direction: column;
   }
-  
-  .tags-grid {
-    grid-template-columns: 1fr;
+
+  .drag-handle-tag {
+    display: none;
   }
 }
