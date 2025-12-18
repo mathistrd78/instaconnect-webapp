@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
+import { migrateTags } from '../scripts/migrateTags';
 import '../styles/Profile.css';
 
 const ProfilePage = () => {
