@@ -6,57 +6,183 @@ import '../styles/Unfollowers.css';
 const UnfollowersPage = () => {
   const navigate = useNavigate();
   const { contacts, updateContact } = useApp();
-  const [activeView, setActiveView] = useState('unfollowers'); // 'unfollowers', 'normal', 'unfollow'
+  const [activeView, setActiveView] = useState('unfollowers');
+  const [unfollowersData, setUnfollowersData] = useState(null);
+  const [normalUnfollowersList, setNormalUnfollowersList] = useState([]);
+  const [doNotFollowList, setDoNotFollowList] = useState([]);
+
+  // Load unfollowers data from Firebase on mount
+  useEffect(() => {
+    loadUnfollowersFromFirebase();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Filter contacts
-  const unfollowers = contacts.filter(c => 
-    c.isUnfollower && !c.unfollowerType
-  );
+  const loadUnfollowersFromFirebase = async () => {
+    const { currentUser } = await import('../contexts/AuthContext').then(m => m.useAuth());
+    
+    if (!currentUser) return;
 
-  const normalUnfollowers = contacts.filter(c => 
-    c.isUnfollower && c.unfollowerType === 'normal'
-  );
+    try {
+      const { db } = await import('../services/firebase');
+      const { doc, getDoc } = await import('firebase/firestore');
+      
+      const userId = currentUser.uid;
+      const userDoc = await getDoc(doc(db, 'users', userId));
 
-  const toUnfollow = contacts.filter(c => 
-    c.isUnfollower && c.unfollowerType === 'unfollow'
-  );
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        
+        // Load unfollowers data
+        if (data.unfollowersData) {
+          setUnfollowersData(data.unfollowersData);
+        }
+        
+        // Load lists
+        if (data.normalUnfollowers) {
+          setNormalUnfollowersList(data.normalUnfollowers);
+        }
+        
+        if (data.doNotFollowList) {
+          setDoNotFollowList(data.doNotFollowList);
+        }
+
+        console.log('✅ Unfollowers data loaded from Firebase');
+      }
+    } catch (error) {
+      console.error('❌ Error loading unfollowers data:', error);
+    }
+  };
+
+  // Get usernames from lists
+  const unfollowers = unfollowersData?.unfollowers || [];
+  const normalUnfollowers = normalUnfollowersList || [];
+  const toUnfollow = doNotFollowList || [];
 
   // Group by first letter
-  const groupByLetter = (contactsList) => {
+  const groupByLetter = (usernamesList) => {
     const grouped = {};
-    contactsList.forEach(contact => {
-      const firstLetter = (contact.firstName || contact.instagram || '?')[0].toUpperCase();
+    usernamesList.forEach(username => {
+      const firstLetter = username[0].toUpperCase();
       if (!grouped[firstLetter]) {
         grouped[firstLetter] = [];
       }
-      grouped[firstLetter].push(contact);
+      grouped[firstLetter].push(username);
     });
     return Object.keys(grouped).sort().map(letter => ({
       letter,
-      contacts: grouped[letter]
+      usernames: grouped[letter]
     }));
   };
 
-  const handleTagAsNormal = async (contact) => {
-    await updateContact(contact.id, {
-      unfollowerType: 'normal'
+  const handleTagAsNormal = async (username) => {
+    // Add to normalUnfollowers in Firebase
+    const newNormalList = [...normalUnfollowersList, username];
+    setNormalUnfollowersList(newNormalList);
+
+    // Remove from unfollowers
+    const newUnfollowers = unfollowers.filter(u => u !== username);
+    const updatedData = {
+      ...unfollowersData,
+      unfollowers: newUnfollowers
+    };
+    setUnfollowersData(updatedData);
+
+    // Save to Firebase
+    await saveToFirebase({
+      unfollowersData: updatedData,
+      normalUnfollowers: newNormalList
     });
   };
 
-  const handleTagAsUnfollow = async (contact) => {
-    await updateContact(contact.id, {
-      unfollowerType: 'unfollow'
+  const handleTagAsUnfollow = async (username) => {
+    // Add to doNotFollowList
+    const newDoNotFollowList = [...doNotFollowList, username];
+    setDoNotFollowList(newDoNotFollowList);
+
+    // Remove from unfollowers
+    const newUnfollowers = unfollowers.filter(u => u !== username);
+    const updatedData = {
+      ...unfollowersData,
+      unfollowers: newUnfollowers
+    };
+    setUnfollowersData(updatedData);
+
+    // Save to Firebase
+    await saveToFirebase({
+      unfollowersData: updatedData,
+      doNotFollowList: newDoNotFollowList
     });
+
+    // Delete contact if exists
+    const contactToDelete = contacts.find(c => 
+      c.instagram.toLowerCase().replace('@', '') === username.toLowerCase()
+    );
+
+    if (contactToDelete) {
+      await updateContact(contactToDelete.id, { deleted: true });
+    }
   };
 
-  const handleRemoveTag = async (contact) => {
-    await updateContact(contact.id, {
-      unfollowerType: null
-    });
+  const handleRemoveTag = async (username) => {
+    // Determine which list it's in
+    if (normalUnfollowersList.includes(username)) {
+      const newList = normalUnfollowersList.filter(u => u !== username);
+      setNormalUnfollowersList(newList);
+
+      // Add back to unfollowers
+      const newUnfollowers = [...unfollowers, username];
+      const updatedData = {
+        ...unfollowersData,
+        unfollowers: newUnfollowers
+      };
+      setUnfollowersData(updatedData);
+
+      await saveToFirebase({
+        unfollowersData: updatedData,
+        normalUnfollowers: newList
+      });
+    } else if (doNotFollowList.includes(username)) {
+      const newList = doNotFollowList.filter(u => u !== username);
+      setDoNotFollowList(newList);
+
+      // Add back to unfollowers
+      const newUnfollowers = [...unfollowers, username];
+      const updatedData = {
+        ...unfollowersData,
+        unfollowers: newUnfollowers
+      };
+      setUnfollowersData(updatedData);
+
+      await saveToFirebase({
+        unfollowersData: updatedData,
+        doNotFollowList: newList
+      });
+    }
+
+    // Switch back to unfollowers view
+    setActiveView('unfollowers');
+  };
+
+  const saveToFirebase = async (data) => {
+    const AuthContext = await import('../contexts/AuthContext');
+    const { currentUser } = AuthContext.useAuth();
+    
+    if (!currentUser) return;
+
+    try {
+      const { db } = await import('../services/firebase');
+      const { doc, setDoc } = await import('firebase/firestore');
+      
+      const userId = currentUser.uid;
+      await setDoc(doc(db, 'users', userId), data, { merge: true });
+      
+      console.log('✅ Unfollowers data saved to Firebase');
+    } catch (error) {
+      console.error('❌ Error saving to Firebase:', error);
+    }
   };
 
   const getEmptyMessage = () => {
@@ -90,10 +216,10 @@ const UnfollowersPage = () => {
     }
   };
 
-  const renderContactsList = (contactsList, showActions = true) => {
-    const grouped = groupByLetter(contactsList);
+  const renderContactsList = (usernamesList, showActions = true) => {
+    const grouped = groupByLetter(usernamesList);
 
-    if (contactsList.length === 0) {
+    if (usernamesList.length === 0) {
       return (
         <div className="empty-state">
           <span className="empty-icon">📭</span>
@@ -108,28 +234,32 @@ const UnfollowersPage = () => {
           <div key={group.letter} className="letter-group">
             <div className="letter-divider">{group.letter}</div>
             <div className="contacts-group">
-              {group.contacts.map(contact => (
-                <div key={contact.id} className="unfollower-card">
+              {group.usernames.map(username => (
+                <div key={username} className="unfollower-card">
                   <div className="unfollower-info">
-                    <div className="unfollower-name">
-                      {contact.firstName || 'Sans nom'}
-                    </div>
-                    <div className="unfollower-instagram">
-                      @{contact.instagram}
-                    </div>
+                    <div className="unfollower-name">@{username}</div>
+                    
+                      href={`https://instagram.com/${username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="unfollower-instagram"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Voir le profil →
+                    </a>
                   </div>
                   {showActions ? (
                     <div className="unfollower-actions">
                       <button
                         className="btn-tag-normal"
-                        onClick={() => handleTagAsNormal(contact)}
+                        onClick={() => handleTagAsNormal(username)}
                         title="Marquer comme unfollower normal"
                       >
                         ✅
                       </button>
                       <button
                         className="btn-tag-unfollow"
-                        onClick={() => handleTagAsUnfollow(contact)}
+                        onClick={() => handleTagAsUnfollow(username)}
                         title="À ne plus suivre"
                       >
                         ❌
@@ -138,7 +268,7 @@ const UnfollowersPage = () => {
                   ) : (
                     <button
                       className="btn-remove-tag"
-                      onClick={() => handleRemoveTag(contact)}
+                      onClick={() => handleRemoveTag(username)}
                       title="Retirer de cette liste"
                     >
                       ↩️
