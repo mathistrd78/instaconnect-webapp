@@ -6,7 +6,7 @@ import '../styles/Fields.css';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
-  const { getAllFields, saveContacts } = useApp();
+  const { getAllFields, saveContacts, customFields, defaultFields } = useApp();
   const [fields, setFields] = useState([]);
   const [defaultFieldIds, setDefaultFieldIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -38,8 +38,14 @@ const FieldsPage = () => {
     loadFields();
   }, []);
 
+  // Recharge les champs quand les données Firebase sont mises à jour
+  useEffect(() => {
+    loadFields();
+  }, [customFields, defaultFields]);
+
   const loadFields = () => {
     const allFields = getAllFields();
+    console.log('📥 Loading fields:', allFields.length);
     setFields(allFields);
     
     // Identify default fields
@@ -130,10 +136,10 @@ const FieldsPage = () => {
     };
 
     const updatedCustomFields = [...fields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id)), fieldToAdd];
-    const defaultFields = fields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
+    const defaultFieldsToSave = fields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
-      defaultFields: defaultFields.map(f => ({
+      defaultFields: defaultFieldsToSave.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
@@ -185,11 +191,11 @@ const FieldsPage = () => {
       f.id === editingField.id ? editingField : f
     );
 
-    const defaultFields = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
-    const customFields = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
+    const defaultFieldsToSave = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
+    const customFieldsToSave = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
-      defaultFields: defaultFields.map(f => ({
+      defaultFields: defaultFieldsToSave.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
@@ -198,7 +204,7 @@ const FieldsPage = () => {
         ...(f.options && { options: f.options }),
         ...(f.tags && { tags: f.tags })
       })),
-      customFields: customFields.map(f => ({
+      customFields: customFieldsToSave.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
@@ -221,11 +227,11 @@ const FieldsPage = () => {
     }
 
     const updatedFields = fields.filter(f => f.id !== fieldId);
-    const defaultFields = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
-    const customFields = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
+    const defaultFieldsToSave = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
+    const customFieldsToSave = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
-      defaultFields: defaultFields.map(f => ({
+      defaultFields: defaultFieldsToSave.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
@@ -234,7 +240,7 @@ const FieldsPage = () => {
         ...(f.options && { options: f.options }),
         ...(f.tags && { tags: f.tags })
       })),
-      customFields: customFields.map(f => ({
+      customFields: customFieldsToSave.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
