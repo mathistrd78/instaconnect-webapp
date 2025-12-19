@@ -39,15 +39,15 @@ const FieldsPage = () => {
   }, []);
 
   const loadFields = () => {
-  const allFields = getAllFields();
-  setFields(allFields);
-  
-  // Identify default fields
-  const defaultIds = allFields
-    .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
-    .map(f => f.id);
-  setDefaultFieldIds(defaultIds);
-};
+    const allFields = getAllFields();
+    setFields(allFields);
+    
+    // Identify default fields
+    const defaultIds = allFields
+      .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
+      .map(f => f.id);
+    setDefaultFieldIds(defaultIds);
+  };
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
@@ -98,7 +98,7 @@ const FieldsPage = () => {
     // Save to Firebase with explicit metadata
     try {
       await saveContacts(null, true, explicitMetadata);
-      console.log('✅ Field order saved to Firebase:', explicitMetadata);
+      console.log('✅ Field order saved to Firebase');
     } catch (error) {
       console.error('❌ Error saving field order:', error);
       alert('Erreur lors de la sauvegarde de l\'ordre des champs');
@@ -363,7 +363,7 @@ const FieldsPage = () => {
                 checked={editingField.required}
                 onChange={(e) => setEditingField({ ...editingField, required: e.target.checked })}
               />
-              <span>Champ obligatoire</span>
+              <span className="checkbox-label-text">Champ obligatoire</span>
             </label>
           </div>
 
@@ -454,7 +454,7 @@ const FieldsPage = () => {
                 checked={newField.required}
                 onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
               />
-              <span>Champ obligatoire</span>
+              <span className="checkbox-label-text">Champ obligatoire</span>
             </label>
           </div>
 
