@@ -30,7 +30,8 @@ const FieldsPage = () => {
     'meetingPlace',
     'discussionStatus',
     'nextMeeting',
-    'notes'
+    'notes',
+    'dejaPecho'
   ];
 
   useEffect(() => {
@@ -96,9 +97,13 @@ const FieldsPage = () => {
     };
 
     // Save to Firebase with explicit metadata
-    await saveContacts(null, true, explicitMetadata);
-    
-    console.log('✅ Field order saved to Firebase');
+    try {
+      await saveContacts(null, true, explicitMetadata);
+      console.log('✅ Field order saved to Firebase:', explicitMetadata);
+    } catch (error) {
+      console.error('❌ Error saving field order:', error);
+      alert('Erreur lors de la sauvegarde de l\'ordre des champs');
+    }
   };
 
   const handleAddField = async () => {
