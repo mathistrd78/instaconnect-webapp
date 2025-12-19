@@ -30,8 +30,7 @@ const FieldsPage = () => {
     'meetingPlace',
     'discussionStatus',
     'nextMeeting',
-    'notes',
-    'dejaPecho'
+    'notes'
   ];
 
   useEffect(() => {
