@@ -20,6 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  width: 200px;
 }
 
 /* Right Section */
@@ -32,13 +33,14 @@
 }
 
 .topbar-logo-text {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   user-select: none;
+  letter-spacing: -0.5px;
 }
 
 /* Nouvelle Analyse Button */
@@ -70,8 +72,12 @@
     padding: 0 16px;
   }
   
+  .topbar-left {
+    width: auto;
+  }
+  
   .topbar-logo-text {
-    font-size: 24px;
+    font-size: 22px;
   }
   
   .topbar-btn-analyse {
