@@ -12,6 +12,7 @@ const Sidebar = () => {
   { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
   { id: 'unfollowers', label: 'Unfollowers', icon: '💔', path: '/app/unfollowers' },
   { id: 'fans', label: 'Fans', icon: '🫶', path: '/app/fans' },
+  { id: 'demandes', label: 'Demandes en attente', icon: '⏳', path: '/app/demandes' },
   { id: 'settings', label: 'Profil', icon: '👤', path: '/app/parametres' }
 ];
 
