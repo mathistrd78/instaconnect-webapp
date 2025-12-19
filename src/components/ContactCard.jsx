@@ -3,9 +3,48 @@ import { useApp } from '../contexts/AppContext';
 import '../styles/ContactCard.css';
 
 const ContactCard = ({ contact, onEdit }) => {
-  const { updateContact } = useApp();
+  const { updateContact, getAllFields } = useApp();
+  
+  const allFields = getAllFields();
 
-  // FIX: Déclarer getLocationDisplay EN PREMIER
+  // Helper function to get display value for radio/select fields
+  const getFieldDisplayValue = (field, value) => {
+    if (value === undefined || value === '' || value === null) {
+      return null;
+    }
+
+    // Si le champ est select et que la valeur est un nombre (index)
+    if (field.type === 'select' && typeof value === 'number') {
+      if (field.tags && field.tags[value]) {
+        return field.tags[value].label || field.tags[value].value || field.tags[value];
+      }
+      return null;
+    }
+    
+    // Si le champ est radio et que la valeur est un nombre (index)
+    if (field.type === 'radio' && typeof value === 'number') {
+      if (field.options && field.options[value]) {
+        return field.options[value];
+      }
+      return null;
+    }
+    
+    // Pour les anciens contacts (valeur texte) avec select
+    if (field.type === 'select' && typeof value === 'string') {
+      const tag = field.tags?.find(t => (t.value || t) === value);
+      return tag ? (tag.label || tag.value || tag) : value;
+    }
+
+    // Pour les anciens contacts (valeur texte) avec radio
+    if (field.type === 'radio' && typeof value === 'string') {
+      return value;
+    }
+    
+    // Autres types de champs
+    return value;
+  };
+
+  // Get location display
   const getLocationDisplay = () => {
     if (!contact.location) return null;
     
@@ -42,10 +81,17 @@ const ContactCard = ({ contact, onEdit }) => {
     });
   };
 
+  // Get tag display with index support
   const getTagDisplay = (fieldId) => {
     const value = contact[fieldId];
-    if (!value) return null;
-    return value;
+    if (value === undefined || value === '' || value === null) return null;
+
+    // Find the field definition
+    const field = allFields.find(f => f.id === fieldId);
+    if (!field) return value;
+
+    // Use helper function for display value
+    return getFieldDisplayValue(field, value);
   };
 
   const handleInstagramClick = (e) => {
@@ -90,23 +136,22 @@ const ContactCard = ({ contact, onEdit }) => {
           {contact.isFavorite ? '⭐' : '☆'}
         </button>
       </div>
-
       <div className="contact-card-body">
-        {contact.relationType && (
+        {getTagDisplay('relationType') && (
           <div className="contact-tag">
             <span className="tag-label">Relation:</span>
             <span className="tag-value">{getTagDisplay('relationType')}</span>
           </div>
         )}
         
-        {contact.meetingPlace && (
+        {getTagDisplay('meetingPlace') && (
           <div className="contact-tag">
             <span className="tag-label">Lieu:</span>
             <span className="tag-value">{getTagDisplay('meetingPlace')}</span>
           </div>
         )}
         
-        {contact.discussionStatus && (
+        {getTagDisplay('discussionStatus') && (
           <div className="contact-tag">
             <span className="tag-label">Statut:</span>
             <span className="tag-value">{getTagDisplay('discussionStatus')}</span>
