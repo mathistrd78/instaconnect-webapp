@@ -118,22 +118,14 @@ const FansPage = () => {
           </div>
         ) : (
           <>
-            <div className="search-bar">
+            <div className="search-container">
               <input
                 type="text"
-                placeholder="Rechercher un fan..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
-              {searchQuery && (
-                <button 
-                  className="btn-clear-search"
-                  onClick={() => setSearchQuery('')}
-                >
-                  ✕
-                </button>
-              )}
             </div>
 
             {filteredFans.length === 0 ? (
