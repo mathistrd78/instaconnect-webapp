@@ -224,6 +224,11 @@ input:checked + .slider:before {
   gap: 12px;
 }
 
+.center-buttons {
+  display: flex;
+  gap: 12px;
+}
+
 .btn-logout {
   padding: 14px 28px;
   border-radius: 12px;
@@ -238,6 +243,24 @@ input:checked + .slider:before {
 
 .btn-logout:hover {
   background: #FF9800;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-restore-field {
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(156, 39, 176, 0.1);
+  color: #9C27B0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-restore-field:hover {
+  background: #9C27B0;
   color: white;
   transform: translateY(-2px);
 }
@@ -296,6 +319,11 @@ input:checked + .slider:before {
   }
 
   .danger-zone {
+    flex-direction: column;
+  }
+
+  .center-buttons {
+    width: 100%;
     flex-direction: column;
   }
 }
