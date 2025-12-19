@@ -26,21 +26,21 @@ const DEFAULT_FIELDS = [
     type: 'text',
     label: 'Prénom',
     required: true,
-    order: -2
+    order: 0
   },
   {
     id: 'instagram',
     type: 'text',
     label: 'Instagram',
     required: true,
-    order: -1
+    order: 1
   },
   {
     id: 'relationType',
     type: 'select',
     label: 'Type de relation',
     required: true,
-    order: 0,
+    order: 2,
     tags: []
   },
   {
@@ -48,7 +48,7 @@ const DEFAULT_FIELDS = [
     type: 'select',
     label: 'Lieu de rencontre',
     required: true,
-    order: 1,
+    order: 3,
     tags: []
   },
   {
@@ -56,7 +56,7 @@ const DEFAULT_FIELDS = [
     type: 'select',
     label: 'Statut de discussion',
     required: true,
-    order: 2,
+    order: 4,
     tags: []
   },
   {
@@ -64,36 +64,44 @@ const DEFAULT_FIELDS = [
     type: 'radio',
     label: 'Sexe',
     required: true,
-    order: 3,
+    order: 5,
     options: ['Homme', 'Femme', 'Autre']
+  },
+  {
+    id: 'dejaPecho',
+    type: 'radio',
+    label: 'Déjà Pécho?',
+    required: false,
+    order: 6,
+    options: ['Oui', 'Non']
   },
   {
     id: 'location',
     type: 'text',
     label: 'Localisation',
     required: false,
-    order: 4
+    order: 7
   },
   {
     id: 'birthDate',
     type: 'date',
     label: 'Anniversaire',
     required: false,
-    order: 5
+    order: 8
   },
   {
     id: 'nextMeeting',
     type: 'date',
     label: 'Prochain RDV',
     required: false,
-    order: 6
+    order: 9
   },
   {
     id: 'notes',
     type: 'textarea',
     label: 'Notes personnelles',
     required: false,
-    order: 7
+    order: 10
   }
 ];
 
@@ -112,20 +120,6 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('darkMode');
     return saved === null ? true : saved === 'true';
   });
-
-  // Update field tags when customTags change
-  useEffect(() => {
-    const updatedFields = defaultFields.map(field => {
-      if (field.type === 'select' && customTags[field.id]) {
-        return {
-          ...field,
-          tags: customTags[field.id]
-        };
-      }
-      return field;
-    });
-    setDefaultFields(updatedFields);
-  }, [customTags]);
 
   // Load user data from Firestore
   const loadUserData = async () => {
@@ -149,10 +143,32 @@ export const AppProvider = ({ children }) => {
           setCustomFields(userData.customFields);
         }
         
-        // Load default fields with saved order
+        // Load default fields with saved order and merge with tags
         if (userData.defaultFields) {
           console.log('📥 Loading saved default fields with order:', userData.defaultFields);
-          setDefaultFields(userData.defaultFields);
+          // Merge tags from customTags into defaultFields
+          const fieldsWithTags = userData.defaultFields.map(field => {
+            if (field.type === 'select' && userData.customTags && userData.customTags[field.id]) {
+              return {
+                ...field,
+                tags: userData.customTags[field.id]
+              };
+            }
+            return field;
+          });
+          setDefaultFields(fieldsWithTags);
+        } else if (userData.customTags) {
+          // If no saved defaultFields but we have customTags, merge them
+          const fieldsWithTags = DEFAULT_FIELDS.map(field => {
+            if (field.type === 'select' && userData.customTags[field.id]) {
+              return {
+                ...field,
+                tags: userData.customTags[field.id]
+              };
+            }
+            return field;
+          });
+          setDefaultFields(fieldsWithTags);
         }
       }
 
