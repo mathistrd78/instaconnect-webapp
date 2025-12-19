@@ -121,14 +121,14 @@ const PendingRequestsPage = () => {
         </div>
 
         {pendingRequests.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">⏳</div>
-            <p className="empty-message">Aucune demande en attente</p>
-            <p className="empty-description">
-              Les demandes d'abonnement en attente sur des comptes privés apparaîtront ici
-            </p>
-          </div>
-        ) : (
+  <div className="empty-state">
+    <div className="empty-icon">⏳</div>
+    <p className="empty-message">Aucun contact dans cette liste.</p>
+    <p className="empty-description">
+      Veuillez lancer une nouvelle analyse.
+    </p>
+  </div>
+) : (
           <>
             <div className="search-container">
               <input
