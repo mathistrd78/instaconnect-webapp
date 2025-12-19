@@ -24,39 +24,39 @@ const ProfilePage = () => {
   }, []);
 
   const loadInstagramStats = async () => {
-  if (!currentUser) return;
+    if (!currentUser) return;
 
-  try {
-    const userId = currentUser.uid;
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    try {
+      const userId = currentUser.uid;
+      const userDoc = await getDoc(doc(db, 'users', userId));
 
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      
-      if (data.unfollowersData) {
-        const following = data.unfollowersData.following || [];
-        const followers = data.unfollowersData.followers || [];
-        const unfollowers = data.unfollowersData.unfollowers || [];
+      if (userDoc.exists()) {
+        const data = userDoc.data();
         
-        // Calculate fans (followers not in following)
-        const fans = followers.filter(follower => !following.includes(follower));
-        
-        // Get pending requests
-        const pendingRequests = data.pendingRequests || [];
-        
-        setInstagramStats({
-          followers: followers.length,
-          following: following.length,
-          unfollowers: unfollowers.length,
-          fans: fans.length,
-          pendingRequests: pendingRequests.length
-        });
+        if (data.unfollowersData) {
+          const following = data.unfollowersData.following || [];
+          const followers = data.unfollowersData.followers || [];
+          const unfollowers = data.unfollowersData.unfollowers || [];
+          
+          // Calculate fans (followers not in following)
+          const fans = followers.filter(follower => !following.includes(follower));
+          
+          // Get pending requests
+          const pendingRequests = data.pendingRequests || [];
+          
+          setInstagramStats({
+            followers: followers.length,
+            following: following.length,
+            unfollowers: unfollowers.length,
+            fans: fans.length,
+            pendingRequests: pendingRequests.length
+          });
+        }
       }
+    } catch (error) {
+      console.error('❌ Error loading Instagram stats:', error);
     }
-  } catch (error) {
-    console.error('❌ Error loading Instagram stats:', error);
-  }
-};
+  };
 
   const totalContacts = contacts.length;
 
@@ -91,92 +91,24 @@ const ProfilePage = () => {
     }
   };
 
-  // SCRIPTS DE MIGRATION CONSERVÉS (commentés mais disponibles)
-  /*
-  const handleMigrateTags = async () => {
-    if (window.confirm('⚠️ Cette opération va créer automatiquement tous les tags utilisés dans vos contacts. Continuer ?')) {
-      try {
-        const { migrateTags } = await import('../scripts/migrateTags');
-        const result = await migrateTags(currentUser.uid);
-        if (result.success) {
-          alert('✅ Migration réussie ! Vos tags ont été créés.');
-          window.location.reload();
-        } else {
-          alert('❌ Erreur lors de la migration : ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error migrating tags:', error);
-        alert('❌ Erreur lors de la migration');
-      }
-    }
-  };
-
-  const handleMigrateToIndexValues = async () => {
-    if (window.confirm('⚠️ Migrer tous les champs radio/select vers un système d\'index ?\n\nCela permettra de modifier les options sans perdre les données existantes.\n\nCette opération est irréversible mais sécurisée.')) {
-      try {
-        const { migrateToIndexValues } = await import('../scripts/migrateToIndexValues');
-        const result = await migrateToIndexValues(currentUser.uid);
-        
-        if (result.success) {
-          let message = `✅ Migration réussie !\n\n${result.updatedCount} contacts mis à jour`;
-          
-          if (result.fieldUpdates) {
-            message += '\n\nDétails:';
-            Object.entries(result.fieldUpdates).forEach(([field, count]) => {
-              message += `\n- ${field}: ${count} contacts`;
-            });
-          }
-          
-          alert(message);
-          window.location.reload();
-        } else {
-          alert('❌ Erreur : ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error migrating:', error);
-        alert('❌ Erreur lors de la migration');
-      }
-    }
-  };
-
-  const handleMigrateGenderField = async () => {
-    if (window.confirm('⚠️ Migrer le champ "Sexe" vers le système d\'index ?\n\nCela convertira :\n- "👨 Homme" ou "Homme" → 0\n- "👩 Femme" ou "Femme" → 1\n- "🌈 Autre" ou "Autre" → 2')) {
-      try {
-        const { migrateGenderField } = await import('../scripts/migrateGenderField');
-        const result = await migrateGenderField(currentUser.uid);
-        
-        if (result.success) {
-          alert(`✅ Migration réussie !\n\n${result.updatedCount} contacts mis à jour`);
-          window.location.reload();
-        } else {
-          alert('❌ Erreur : ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error migrating gender:', error);
-        alert('❌ Erreur lors de la migration');
-      }
-    }
-  };
-  */
-
   const handleFixFieldsStructure = async () => {
-  if (window.confirm('🔧 Corriger la structure des champs ?\n\nCela replacera birthDate et nextMeeting dans les champs par défaut.')) {
-    try {
-      const { fixFieldsStructure } = await import('../scripts/fixFieldsStructure');
-      const result = await fixFieldsStructure(currentUser.uid);
-      
-      if (result.success) {
-        alert(`✅ Structure corrigée !\n\n${result.movedCount} champ(s) replacé(s)`);
-        window.location.reload();
-      } else {
-        alert('❌ Erreur : ' + result.error);
+    if (window.confirm('🔧 Corriger la structure des champs ?\n\nCela replacera birthDate et nextMeeting dans les champs par défaut.')) {
+      try {
+        const { fixFieldsStructure } = await import('../scripts/fixFieldsStructure');
+        const result = await fixFieldsStructure(currentUser.uid);
+        
+        if (result.success) {
+          alert(`✅ Structure corrigée !\n\n${result.movedCount} champ(s) replacé(s)`);
+          window.location.reload();
+        } else {
+          alert('❌ Erreur : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error fixing fields:', error);
+        alert('❌ Erreur lors de la correction');
       }
-    } catch (error) {
-      console.error('Error fixing fields:', error);
-      alert('❌ Erreur lors de la correction');
     }
-  }
-};
+  };
 
   return (
     <div className="profile-page">
@@ -304,6 +236,9 @@ const ProfilePage = () => {
       <div className="danger-zone">
         <button className="btn-logout" onClick={handleLogout}>
           🚪 Se déconnecter
+        </button>
+        <button className="btn-migrate-tags" onClick={handleFixFieldsStructure}>
+          🔧 Corriger champs
         </button>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
