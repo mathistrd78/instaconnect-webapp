@@ -73,21 +73,41 @@ const ContactModal = ({ contact, onClose, onSave }) => {
     return { value: year, label: year };
   });
 
+  // Helper function to get display value for any field
+  const getDisplayValue = (field) => {
+    const value = formData[field.id];
+    
+    // Handle location field (can be object or string)
+    if (field.id === 'location') {
+      if (typeof value === 'object' && value !== null) {
+        return value.displayName || value.city || '';
+      }
+      return value || '';
+    }
+    
+    // Handle other fields normally
+    return value || '';
+  };
+
   const renderField = (field) => {
     // Instagram field is disabled
     const isDisabled = field.id === 'instagram';
 
     switch (field.type) {
       case 'text':
+        // Special handling for location field
+        const displayValue = getDisplayValue(field);
+        
         return (
           <input
             type="text"
             id={field.id}
             className={`form-input ${isDisabled ? 'disabled' : ''}`}
-            value={formData[field.id] || ''}
+            value={displayValue}
             onChange={(e) => handleChange(field.id, e.target.value)}
             required={field.required}
             disabled={isDisabled}
+            placeholder={field.id === 'location' ? 'Ex: Paris, France' : ''}
           />
         );
 
