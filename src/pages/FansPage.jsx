@@ -121,7 +121,7 @@ const FansPage = () => {
             <div className="search-container">
               <input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder="🔍 Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
