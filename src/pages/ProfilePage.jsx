@@ -24,29 +24,39 @@ const ProfilePage = () => {
   }, []);
 
   const loadInstagramStats = async () => {
-    if (!currentUser) return;
+  if (!currentUser) return;
 
-    try {
-      const userId = currentUser.uid;
-      const userDoc = await getDoc(doc(db, 'users', userId));
+  try {
+    const userId = currentUser.uid;
+    const userDoc = await getDoc(doc(db, 'users', userId));
 
-      if (userDoc.exists()) {
-        const data = userDoc.data();
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      
+      if (data.unfollowersData) {
+        const following = data.unfollowersData.following || [];
+        const followers = data.unfollowersData.followers || [];
+        const unfollowers = data.unfollowersData.unfollowers || [];
         
-        if (data.unfollowersData) {
-          setInstagramStats({
-            followers: data.unfollowersData.followers?.length || 0,
-            following: data.unfollowersData.following?.length || 0,
-            unfollowers: data.unfollowersData.unfollowers?.length || 0,
-            fans: 0,
-            pendingRequests: 0
-          });
-        }
+        // Calculate fans (followers not in following)
+        const fans = followers.filter(follower => !following.includes(follower));
+        
+        // Get pending requests
+        const pendingRequests = data.pendingRequests || [];
+        
+        setInstagramStats({
+          followers: followers.length,
+          following: following.length,
+          unfollowers: unfollowers.length,
+          fans: fans.length,
+          pendingRequests: pendingRequests.length
+        });
       }
-    } catch (error) {
-      console.error('❌ Error loading Instagram stats:', error);
     }
-  };
+  } catch (error) {
+    console.error('❌ Error loading Instagram stats:', error);
+  }
+};
 
   const totalContacts = contacts.length;
 
