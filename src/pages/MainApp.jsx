@@ -11,6 +11,7 @@ import ProfilePage from './ProfilePage';
 import AnalysePage from './AnalysePage';
 import UnfollowersPage from './UnfollowersPage';
 import FansPage from './FansPage';
+import PendingRequestsPage from './PendingRequestsPage';
 import '../styles/MainApp.css';
 
 const MainApp = () => {
