@@ -9,7 +9,7 @@ import '../styles/Contacts.css';
 
 const ContactsPage = () => {
   const location = useLocation();
-  const { contacts, getAllFields } = useApp();
+  const { contacts, getAllFields, updateContact } = useApp();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
@@ -154,6 +154,16 @@ const ContactsPage = () => {
     setShowModal(true);
   };
 
+  const handleSaveContact = async (updatedData) => {
+    try {
+      await updateContact(editingContact.id, updatedData);
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving contact:', error);
+      alert('Erreur lors de la sauvegarde du contact');
+    }
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingContact(null);
@@ -262,6 +272,7 @@ const ContactsPage = () => {
         <ContactModal
           contact={editingContact}
           onClose={handleCloseModal}
+          onSave={handleSaveContact}
         />
       )}
     </div>
