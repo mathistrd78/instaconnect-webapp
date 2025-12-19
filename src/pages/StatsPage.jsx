@@ -8,12 +8,50 @@ const StatsPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('relationType');
 
+  const allFields = getAllFields();
+
+  // Helper function to convert index to display value
+  const getFieldDisplayValue = (field, value) => {
+    if (value === undefined || value === null || value === '') {
+      return 'Non renseigné';
+    }
+
+    // Si le champ est select et que la valeur est un nombre (index)
+    if (field.type === 'select' && typeof value === 'number') {
+      if (field.tags && field.tags[value]) {
+        return field.tags[value].label || field.tags[value].value || field.tags[value];
+      }
+      return `Option ${value}`;
+    }
+    
+    // Si le champ est radio et que la valeur est un nombre (index)
+    if (field.type === 'radio' && typeof value === 'number') {
+      if (field.options && field.options[value]) {
+        return field.options[value];
+      }
+      return `Option ${value}`;
+    }
+    
+    // Pour les anciennes valeurs texte (select)
+    if (field.type === 'select' && typeof value === 'string') {
+      const tag = field.tags?.find(t => (t.value || t) === value);
+      return tag ? (tag.label || tag.value || tag) : value;
+    }
+
+    // Pour les anciennes valeurs texte (radio)
+    if (field.type === 'radio' && typeof value === 'string') {
+      return value;
+    }
+    
+    return value;
+  };
+
   // Get all categorizable fields (select, radio)
   const categorizableFields = useMemo(() => {
-    return getAllFields().filter(field => 
+    return allFields.filter(field => 
       field.type === 'select' || field.type === 'radio'
     );
-  }, [getAllFields]);
+  }, [allFields]);
 
   // Set first field as active tab if exists
   React.useEffect(() => {
@@ -24,7 +62,6 @@ const StatsPage = () => {
 
   // Check if contact is complete
   const isContactComplete = (contact) => {
-    const allFields = getAllFields();
     const requiredFields = allFields.filter(f => f.required);
     return requiredFields.every(field => {
       const value = contact[field.id];
@@ -39,17 +76,22 @@ const StatsPage = () => {
     const incomplete = total - complete;
 
     return { total, complete, incomplete };
-  }, [contacts]);
+  }, [contacts, allFields]);
 
   // Get distribution for a field (excluding undefined/null/empty)
   const getFieldDistribution = (fieldId) => {
+    const field = allFields.find(f => f.id === fieldId);
+    if (!field) return { data: [], totalDefined: 0 };
+
     const distribution = {};
     let totalDefined = 0;
 
     contacts.forEach(contact => {
       const value = contact[fieldId];
       if (value !== undefined && value !== null && value !== '') {
-        distribution[value] = (distribution[value] || 0) + 1;
+        // Convert index to display value
+        const displayValue = getFieldDisplayValue(field, value);
+        distribution[displayValue] = (distribution[displayValue] || 0) + 1;
         totalDefined++;
       }
     });
@@ -126,9 +168,19 @@ const StatsPage = () => {
     };
   };
 
-  const handleLegendClick = (value) => {
-    if (activeField) {
-      const filters = { [activeField.id]: [value] };
+  const handleLegendClick = (displayLabel) => {
+    if (!activeField) return;
+
+    // Find the original value (index or string) that matches this display label
+    const matchingContact = contacts.find(contact => {
+      const value = contact[activeField.id];
+      if (value === undefined || value === null || value === '') return false;
+      return getFieldDisplayValue(activeField, value) === displayLabel;
+    });
+
+    if (matchingContact) {
+      const originalValue = matchingContact[activeField.id];
+      const filters = { [activeField.id]: [originalValue] };
       navigate('/app/contacts', { state: { filters } });
     }
   };
