@@ -305,6 +305,12 @@ const FieldsPage = () => {
   return (
     <div className="fields-page">
       <div className="fields-header">
+        <button 
+          className="btn-back"
+          onClick={() => navigate('/app/parametres')}
+        >
+          ← Retour aux paramètres
+        </button>
         <h1>⚙️ Gestion des champs</h1>
         <p className="fields-subtitle">Personnalisez les champs de vos contacts</p>
       </div>
