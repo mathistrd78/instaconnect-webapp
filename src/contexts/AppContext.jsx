@@ -140,11 +140,19 @@ export const AppProvider = ({ children }) => {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
+        
         if (userData.customTags) {
           setCustomTags(userData.customTags);
         }
+        
         if (userData.customFields) {
           setCustomFields(userData.customFields);
+        }
+        
+        // Load default fields with saved order
+        if (userData.defaultFields) {
+          console.log('📥 Loading saved default fields with order:', userData.defaultFields);
+          setDefaultFields(userData.defaultFields);
         }
       }
 
