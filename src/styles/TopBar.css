@@ -1,48 +1,84 @@
-import React, { useState } from 'react';
-import ContactModal from './ContactModal';
-import '../styles/TopBar.css';
+.topbar {
+  height: 70px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
-const TopBar = () => {
-  const [showModal, setShowModal] = useState(false);
+.topbar-left {
+  display: flex;
+  align-items: center;
+}
 
-  const handleAddContact = () => {
-    setShowModal(true);
-  };
+.app-name {
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  user-select: none;
+}
 
-  const handleSaveContact = (contact) => {
-    setShowModal(false);
-  };
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  const handleNewAnalysis = () => {
-    alert('Fonctionnalité "Nouvelle analyse" à venir');
-  };
+.btn-new-analysis {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 2px solid #E1306C;
+  background: transparent;
+  color: #E1306C;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
 
-  return (
-    <>
-      <div className="topbar">
-        <div className="topbar-left">
-          <div className="app-name">InstaConnect</div>
-        </div>
+.btn-new-analysis:hover {
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  transform: translateY(-1px);
+}
 
-        <div className="topbar-right">
-          <button className="btn-new-analysis" onClick={handleNewAnalysis}>
-            📊 Nouvelle analyse
-          </button>
-          <button className="btn-add-contact" onClick={handleAddContact}>
-            + Nouveau contact
-          </button>
-        </div>
-      </div>
+.btn-add-contact {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
 
-      {showModal && (
-        <ContactModal
-          contact={null}
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveContact}
-        />
-      )}
-    </>
-  );
-};
+.btn-add-contact:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
 
-export default TopBar;
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 16px;
+  }
+
+  .app-name {
+    font-size: 18px;
+  }
+
+  .btn-new-analysis,
+  .btn-add-contact {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
