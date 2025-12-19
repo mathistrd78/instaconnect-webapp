@@ -32,6 +32,7 @@ const MainApp = () => {
             <Route path="/analyse" element={<AnalysePage />} />
             <Route path="/unfollowers" element={<UnfollowersPage />} />
             <Route path="/fans" element={<FansPage />} />
+            <Route path="/demandes" element={<PendingRequestsPage />} />
           </Routes>
         </div>
       </div>
