@@ -99,6 +99,34 @@ const ProfilePage = () => {
     }
   };
 
+  const handleMigrateToIndexValues = async () => {
+    if (window.confirm('⚠️ Migrer tous les champs radio/select vers un système d\'index ?\n\nCela permettra de modifier les options sans perdre les données existantes.\n\nCette opération est irréversible mais sécurisée.')) {
+      try {
+        const { migrateToIndexValues } = await import('../scripts/migrateToIndexValues');
+        const result = await migrateToIndexValues(currentUser.uid);
+        
+        if (result.success) {
+          let message = `✅ Migration réussie !\n\n${result.updatedCount} contacts mis à jour`;
+          
+          if (result.fieldUpdates) {
+            message += '\n\nDétails:';
+            Object.entries(result.fieldUpdates).forEach(([field, count]) => {
+              message += `\n- ${field}: ${count} contacts`;
+            });
+          }
+          
+          alert(message);
+          window.location.reload();
+        } else {
+          alert('❌ Erreur : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error migrating:', error);
+        alert('❌ Erreur lors de la migration');
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -226,9 +254,14 @@ const ProfilePage = () => {
         <button className="btn-logout" onClick={handleLogout}>
           🚪 Se déconnecter
         </button>
-        <button className="btn-migrate-tags" onClick={handleMigrateTags}>
-          🔄 Migrer les tags
-        </button>
+        <div className="center-buttons">
+          <button className="btn-migrate-tags" onClick={handleMigrateToIndexValues}>
+            🔢 Migrer vers index
+          </button>
+          <button className="btn-migrate-tags" onClick={handleMigrateTags}>
+            🔄 Migrer les tags
+          </button>
+        </div>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
         </button>
