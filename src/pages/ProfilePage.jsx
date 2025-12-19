@@ -99,35 +99,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleRecoverDejaPecho = async () => {
-    if (window.confirm('⚠️ Récupérer le champ "Déjà Pécho?" et migrer les données existantes ?')) {
-      try {
-        const { recoverDejaPecho } = await import('../scripts/recoverDejaPecho');
-        const result = await recoverDejaPecho(currentUser.uid);
-        
-        if (result.success) {
-          let message = '✅ Champ "Déjà Pécho?" récupéré avec succès !';
-          
-          if (result.migratedFrom) {
-            message += `\n\n📊 Données migrées depuis ${result.migratedFrom}`;
-          }
-          
-          if (result.contactsUpdated) {
-            message += '\n✅ Tous les contacts ont été mis à jour';
-          }
-          
-          alert(message);
-          window.location.reload();
-        } else {
-          alert('❌ Erreur : ' + (result.error || result.message));
-        }
-      } catch (error) {
-        console.error('Error recovering field:', error);
-        alert('❌ Erreur lors de la récupération du champ');
-      }
-    }
-  };
-
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -255,14 +226,9 @@ const ProfilePage = () => {
         <button className="btn-logout" onClick={handleLogout}>
           🚪 Se déconnecter
         </button>
-        <div className="center-buttons">
-          <button className="btn-restore-field" onClick={handleRecoverDejaPecho}>
-            🔧 Récupérer "Déjà Pécho?"
-          </button>
-          <button className="btn-migrate-tags" onClick={handleMigrateTags}>
-            🔄 Migrer les tags
-          </button>
-        </div>
+        <button className="btn-migrate-tags" onClick={handleMigrateTags}>
+          🔄 Migrer les tags
+        </button>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
         </button>
