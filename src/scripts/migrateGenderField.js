@@ -1,29 +1,12 @@
 import { db } from '../services/firebase';
-import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 
 export const migrateGenderField = async (userId) => {
   try {
     console.log('🔄 Migrating gender field...');
 
-    // Get user fields structure
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    if (!userDoc.exists()) {
-      return { success: false, error: 'User not found' };
-    }
-
-    const userData = userDoc.data();
-    const allFields = [...(userData.defaultFields || []), ...(userData.customFields || [])];
-    
-    // Find gender field
-    const genderField = allFields.find(f => f.id === 'gender');
-    
-    if (!genderField || !genderField.tags) {
-      return { success: false, error: 'Gender field not found' };
-    }
-
-    console.log('Gender field tags:', genderField.tags);
-
     // Mapping of old values to new indices
+    // Based on options: ['Homme', 'Femme', 'Autre']
     const valueMap = {
       '👨 Homme': 0,
       'Homme': 0,
@@ -39,6 +22,7 @@ export const migrateGenderField = async (userId) => {
     
     let updatedCount = 0;
     const updatePromises = [];
+    const conversionLog = {};
     
     contactsSnapshot.forEach((contactDoc) => {
       const contactData = contactDoc.data();
@@ -54,21 +38,35 @@ export const migrateGenderField = async (userId) => {
             }, { merge: true })
           );
           updatedCount++;
-          console.log(`Converting gender: "${currentValue}" → ${newIndex}`);
+          
+          // Log conversions
+          if (!conversionLog[currentValue]) {
+            conversionLog[currentValue] = 0;
+          }
+          conversionLog[currentValue]++;
+          
+          console.log(`✅ Converting gender: "${currentValue}" → ${newIndex} (contact: ${contactDoc.id})`);
         } else {
-          console.warn(`⚠️ Unknown gender value: "${currentValue}"`);
+          console.warn(`⚠️ Unknown gender value: "${currentValue}" (contact: ${contactDoc.id})`);
         }
+      } else if (contactData.gender && typeof contactData.gender === 'number') {
+        console.log(`ℹ️ Contact ${contactDoc.id} already has numeric gender: ${contactData.gender}`);
       }
     });
     
     // Execute all updates
-    await Promise.all(updatePromises);
-    
-    console.log(`✅ Migrated ${updatedCount} contacts`);
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+      console.log(`✅ Migration completed: ${updatedCount} contacts updated`);
+      console.log('📊 Conversion summary:', conversionLog);
+    } else {
+      console.log('ℹ️ No contacts to update (all already migrated or no gender values)');
+    }
     
     return {
       success: true,
-      updatedCount
+      updatedCount,
+      conversionLog
     };
     
   } catch (error) {
