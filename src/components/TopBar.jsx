@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ContactModal from './ContactModal';
 import '../styles/TopBar.css';
 
 const TopBar = () => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
   const handleAddContact = () => {
@@ -20,15 +22,24 @@ const TopBar = () => {
   return (
     <>
       <div className="topbar">
+        {/* Left: InstaConnect */}
         <div className="topbar-left">
-          <div className="app-name">InstaConnect</div>
+          <span className="topbar-logo-text">InstaConnect</span>
         </div>
 
+        {/* Right: Buttons */}
         <div className="topbar-right">
-          <button className="btn-new-analysis" onClick={handleNewAnalysis}>
+          <button
+            className="topbar-btn-analyse"
+            onClick={handleNewAnalysis}
+            title="Nouvelle analyse Instagram"
+          >
             📊 Nouvelle analyse
           </button>
-          <button className="btn-add-contact" onClick={handleAddContact}>
+          <button
+            className="topbar-btn-contact"
+            onClick={handleAddContact}
+          >
             + Nouveau contact
           </button>
         </div>
