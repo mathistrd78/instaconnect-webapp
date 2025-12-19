@@ -1,4 +1,8 @@
 .topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 70px;
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
@@ -6,16 +10,29 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: 24px;
+  z-index: 200;
 }
 
+/* Left Section */
 .topbar-left {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 
-.app-name {
-  font-size: 22px;
+/* Right Section */
+.topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.topbar-logo-text {
+  font-size: 24px;
   font-weight: 700;
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   -webkit-background-clip: text;
@@ -24,13 +41,8 @@
   user-select: none;
 }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn-new-analysis {
+/* Nouvelle Analyse Button */
+.topbar-btn-analyse {
   padding: 10px 20px;
   border-radius: 10px;
   border: 2px solid #E1306C;
@@ -40,16 +52,20 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   white-space: nowrap;
 }
 
-.btn-new-analysis:hover {
+.topbar-btn-analyse:hover {
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   color: white;
   transform: translateY(-1px);
 }
 
-.btn-add-contact {
+/* Nouveau Contact Button */
+.topbar-btn-contact {
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
@@ -62,23 +78,24 @@
   white-space: nowrap;
 }
 
-.btn-add-contact:hover {
+.topbar-btn-contact:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .topbar {
     padding: 0 16px;
   }
-
-  .app-name {
-    font-size: 18px;
+  
+  .topbar-logo-text {
+    font-size: 20px;
   }
-
-  .btn-new-analysis,
-  .btn-add-contact {
-    padding: 8px 14px;
+  
+  .topbar-btn-analyse,
+  .topbar-btn-contact {
     font-size: 13px;
+    padding: 8px 14px;
   }
 }
