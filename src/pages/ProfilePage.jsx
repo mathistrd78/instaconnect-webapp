@@ -91,6 +91,8 @@ const ProfilePage = () => {
     }
   };
 
+  // SCRIPT DE CORRECTION CONSERVÉ (commenté mais disponible)
+  /*
   const handleFixFieldsStructure = async () => {
     if (window.confirm('🔧 Corriger la structure des champs ?\n\nCela replacera birthDate et nextMeeting dans les champs par défaut.')) {
       try {
@@ -109,6 +111,7 @@ const ProfilePage = () => {
       }
     }
   };
+  */
 
   return (
     <div className="profile-page">
@@ -236,9 +239,6 @@ const ProfilePage = () => {
       <div className="danger-zone">
         <button className="btn-logout" onClick={handleLogout}>
           🚪 Se déconnecter
-        </button>
-        <button className="btn-migrate-tags" onClick={handleFixFieldsStructure}>
-          🔧 Corriger champs
         </button>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
