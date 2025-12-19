@@ -6,7 +6,7 @@ import '../styles/Fields.css';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
-  const { getAllFields, saveContacts, customFields, defaultFields } = useApp();
+  const { getAllFields, saveContacts } = useApp();
   const [fields, setFields] = useState([]);
   const [defaultFieldIds, setDefaultFieldIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -38,11 +38,6 @@ const FieldsPage = () => {
     loadFields();
   }, []);
 
-  // Recharge les champs quand les données Firebase sont mises à jour
-  useEffect(() => {
-    loadFields();
-  }, [customFields, defaultFields]);
-
   const loadFields = () => {
     const allFields = getAllFields();
     console.log('📥 Loading fields:', allFields.length);
@@ -72,16 +67,16 @@ const FieldsPage = () => {
     setFields(reorderedFields);
 
     // Separate default and custom fields
-    const defaultFields = reorderedFields.filter(f => 
+    const defaultFieldsFiltered = reorderedFields.filter(f => 
       DEFAULT_FIELD_IDS.includes(f.id)
     );
-    const customFields = reorderedFields.filter(f => 
+    const customFieldsFiltered = reorderedFields.filter(f => 
       !DEFAULT_FIELD_IDS.includes(f.id)
     );
 
     // Prepare metadata with explicit structure
     const explicitMetadata = {
-      defaultFields: defaultFields.map(f => ({
+      defaultFields: defaultFieldsFiltered.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
@@ -90,7 +85,7 @@ const FieldsPage = () => {
         ...(f.options && { options: f.options }),
         ...(f.tags && { tags: f.tags })
       })),
-      customFields: customFields.map(f => ({
+      customFields: customFieldsFiltered.map(f => ({
         id: f.id,
         type: f.type,
         label: f.label,
