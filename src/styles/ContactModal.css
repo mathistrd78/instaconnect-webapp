@@ -128,13 +128,13 @@
   color: #dc3545;
 }
 
-/* Birth Date Container */
-.birth-date-container {
+/* Date Selects Container */
+.date-selects {
   display: flex;
   gap: 12px;
 }
 
-.birth-select {
+.date-select {
   flex: 1;
 }
 
@@ -207,7 +207,24 @@
   border-top: 1px solid var(--border-color);
 }
 
-.btn-primary {
+.btn-cancel {
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: var(--border-color);
+}
+
+.btn-save {
   flex: 1;
   padding: 14px 24px;
   border-radius: 12px;
@@ -220,26 +237,9 @@
   transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
+.btn-save:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-}
-
-.btn-delete {
-  padding: 14px 24px;
-  border-radius: 12px;
-  border: none;
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-delete:hover {
-  background: #dc3545;
-  color: white;
 }
 
 /* Responsive */
@@ -255,7 +255,7 @@
     padding: 20px;
   }
 
-  .birth-date-container {
+  .date-selects {
     flex-direction: column;
   }
 }
