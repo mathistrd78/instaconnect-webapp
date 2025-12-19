@@ -40,11 +40,6 @@ const FieldsPage = () => {
 
   const loadFields = () => {
   const allFields = getAllFields();
-  console.log('📊 ALL FIELDS:', allFields);
-  console.log('📊 Total fields:', allFields.length);
-  console.log('📊 Custom fields:', allFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id)));
-  console.log('📊 Default fields:', allFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id)));
-  
   setFields(allFields);
   
   // Identify default fields
