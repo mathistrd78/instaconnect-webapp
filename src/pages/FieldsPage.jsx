@@ -125,38 +125,53 @@ const FieldsPage = () => {
   };
 
   const handleDragEnd = async (result) => {
-    if (!result.destination) return;
+  if (!result.destination) return;
 
-    const items = Array.from(allFields);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const items = Array.from(allFields);
+  const [reorderedItem] = items.splice(result.source.index, 1);
+  items.splice(result.destination.index, 0, reorderedItem);
 
-    // Update order property for all fields
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      order: index
-    }));
+  // Update order property for all fields
+  const reorderedFields = items.map((field, index) => ({
+    ...field,
+    order: index
+  }));
 
-    // Split back into default and custom
-    const updatedDefaultFields = updatedItems.filter(f => 
-      defaultFields.some(df => df.id === f.id)
-    );
-    const updatedCustomFields = updatedItems.filter(f => 
-      customFields.some(cf => cf.id === f.id)
-    );
+  // Separate default and custom fields
+  const defaultFields = reorderedFields.filter(f => 
+    DEFAULT_FIELDS.some(df => df.id === f.id)
+  );
+  const customFields = reorderedFields.filter(f => 
+    !DEFAULT_FIELDS.some(df => df.id === f.id)
+  );
 
-    setDefaultFields(updatedDefaultFields);
-    setCustomFields(updatedCustomFields);
-    
-    // Save with explicit values
-    await saveContacts(null, true, {
-      customTags,
-      customFields: updatedCustomFields,
-      defaultFields: updatedDefaultFields
-    });
-
-    console.log('✅ Field order saved');
+  // Prepare metadata with explicit structure
+  const explicitMetadata = {
+    defaultFields: defaultFields.map(f => ({
+      id: f.id,
+      type: f.type,
+      label: f.label,
+      required: f.required,
+      order: f.order,
+      ...(f.options && { options: f.options }),
+      ...(f.tags && { tags: f.tags })
+    })),
+    customFields: customFields.map(f => ({
+      id: f.id,
+      type: f.type,
+      label: f.label,
+      required: f.required,
+      order: f.order,
+      ...(f.options && { options: f.options }),
+      ...(f.tags && { tags: f.tags })
+    }))
   };
+
+  // Save to Firebase with explicit metadata
+  await saveContacts(null, true, explicitMetadata);
+  
+  console.log('✅ Field order saved to Firebase');
+};
 
   const getFieldIcon = (type) => {
     switch (type) {
