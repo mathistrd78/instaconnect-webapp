@@ -64,25 +64,6 @@
   transform: translateY(-1px);
 }
 
-/* Nouveau Contact Button */
-.topbar-btn-contact {
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.topbar-btn-contact:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .topbar {
@@ -90,11 +71,10 @@
   }
   
   .topbar-logo-text {
-    font-size: 20px;
+    font-size: 24px;
   }
   
-  .topbar-btn-analyse,
-  .topbar-btn-contact {
+  .topbar-btn-analyse {
     font-size: 13px;
     padding: 8px 14px;
   }
