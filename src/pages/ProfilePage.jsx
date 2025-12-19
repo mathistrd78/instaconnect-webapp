@@ -72,7 +72,7 @@ const ProfilePage = () => {
     if (window.confirm('Se déconnecter ?')) {
       try {
         await logout();
-        navigate('/login');
+        navigate('/auth');
       } catch (error) {
         console.error('Error logging out:', error);
         alert('Erreur lors de la déconnexion');
