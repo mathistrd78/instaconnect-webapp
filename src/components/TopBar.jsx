@@ -6,7 +6,7 @@ const TopBar = () => {
   const navigate = useNavigate();
 
   const handleNewAnalysis = () => {
-    alert('Fonctionnalité "Nouvelle analyse" à venir');
+    navigate('/app/analyse');
   };
 
   return (
