@@ -124,17 +124,22 @@ const ContactModal = ({ contact, onClose, onSave }) => {
         );
 
       case 'select':
+        // Get current value (handle both old string values and new index values)
+        const currentSelectValue = typeof formData[field.id] === 'number' 
+          ? formData[field.id] 
+          : (field.tags ? field.tags.findIndex(tag => (tag.value || tag) === formData[field.id]) : -1);
+
         return (
           <select
             id={field.id}
             className="form-input"
-            value={formData[field.id] || ''}
-            onChange={(e) => handleChange(field.id, e.target.value)}
+            value={currentSelectValue >= 0 ? currentSelectValue : ''}
+            onChange={(e) => handleChange(field.id, e.target.value === '' ? '' : parseInt(e.target.value))}
             required={field.required}
           >
             <option value="">Sélectionner</option>
             {field.tags && field.tags.map((tag, index) => (
-              <option key={index} value={tag.value || tag}>
+              <option key={index} value={index}>
                 {tag.label || tag}
               </option>
             ))}
@@ -142,6 +147,11 @@ const ContactModal = ({ contact, onClose, onSave }) => {
         );
 
       case 'radio':
+        // Get current value (handle both old string values and new index values)
+        const currentRadioValue = typeof formData[field.id] === 'number' 
+          ? formData[field.id] 
+          : (field.options ? field.options.findIndex(opt => opt === formData[field.id]) : -1);
+
         return (
           <div className="radio-group">
             {field.options && field.options.map((option, index) => (
@@ -149,9 +159,9 @@ const ContactModal = ({ contact, onClose, onSave }) => {
                 <input
                   type="radio"
                   name={field.id}
-                  value={option}
-                  checked={formData[field.id] === option}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  value={index}
+                  checked={currentRadioValue === index}
+                  onChange={(e) => handleChange(field.id, parseInt(e.target.value))}
                   required={field.required}
                 />
                 <span>{option}</span>
