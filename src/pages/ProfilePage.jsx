@@ -159,6 +159,25 @@ const ProfilePage = () => {
   };
   */
 
+  const handleFixFieldsStructure = async () => {
+  if (window.confirm('🔧 Corriger la structure des champs ?\n\nCela replacera birthDate et nextMeeting dans les champs par défaut.')) {
+    try {
+      const { fixFieldsStructure } = await import('../scripts/fixFieldsStructure');
+      const result = await fixFieldsStructure(currentUser.uid);
+      
+      if (result.success) {
+        alert(`✅ Structure corrigée !\n\n${result.movedCount} champ(s) replacé(s)`);
+        window.location.reload();
+      } else {
+        alert('❌ Erreur : ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error fixing fields:', error);
+      alert('❌ Erreur lors de la correction');
+    }
+  }
+};
+
   return (
     <div className="profile-page">
       <div className="profile-header">
