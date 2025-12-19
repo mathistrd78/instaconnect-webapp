@@ -39,15 +39,20 @@ const FieldsPage = () => {
   }, []);
 
   const loadFields = () => {
-    const allFields = getAllFields();
-    setFields(allFields);
-    
-    // Identify default fields
-    const defaultIds = allFields
-      .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
-      .map(f => f.id);
-    setDefaultFieldIds(defaultIds);
-  };
+  const allFields = getAllFields();
+  console.log('📊 ALL FIELDS:', allFields);
+  console.log('📊 Total fields:', allFields.length);
+  console.log('📊 Custom fields:', allFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id)));
+  console.log('📊 Default fields:', allFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id)));
+  
+  setFields(allFields);
+  
+  // Identify default fields
+  const defaultIds = allFields
+    .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
+    .map(f => f.id);
+  setDefaultFieldIds(defaultIds);
+};
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
