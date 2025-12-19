@@ -127,6 +127,25 @@ const ProfilePage = () => {
     }
   };
 
+  const handleMigrateGenderField = async () => {
+    if (window.confirm('⚠️ Migrer le champ "Sexe" vers le système d\'index ?\n\nCela convertira :\n- "👨 Homme" ou "Homme" → 0\n- "👩 Femme" ou "Femme" → 1\n- "🌈 Autre" ou "Autre" → 2')) {
+      try {
+        const { migrateGenderField } = await import('../scripts/migrateGenderField');
+        const result = await migrateGenderField(currentUser.uid);
+        
+        if (result.success) {
+          alert(`✅ Migration réussie !\n\n${result.updatedCount} contacts mis à jour`);
+          window.location.reload();
+        } else {
+          alert('❌ Erreur : ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error migrating gender:', error);
+        alert('❌ Erreur lors de la migration');
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -255,6 +274,9 @@ const ProfilePage = () => {
           🚪 Se déconnecter
         </button>
         <div className="center-buttons">
+          <button className="btn-migrate-tags" onClick={handleMigrateGenderField}>
+            🚹 Migrer Sexe
+          </button>
           <button className="btn-migrate-tags" onClick={handleMigrateToIndexValues}>
             🔢 Migrer vers index
           </button>
