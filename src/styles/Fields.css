@@ -153,31 +153,35 @@
 .checkbox-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
   color: var(--text-primary);
   user-select: none;
-  padding: 12px;
-  border-radius: 8px;
-  transition: background 0.2s ease;
+  padding: 14px 16px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background: var(--background);
+  border: 2px solid var(--border-color);
 }
 
 .checkbox-container:hover {
-  background: var(--border-color);
+  border-color: #E1306C;
 }
 
 .checkbox-container input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
   accent-color: #E1306C;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .checkbox-label-text {
   font-size: 15px;
   font-weight: 500;
   color: var(--text-primary);
+  pointer-events: none;
 }
 
 /* Form Actions */
