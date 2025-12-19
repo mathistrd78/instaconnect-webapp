@@ -6,8 +6,9 @@ import '../styles/Fields.css';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
-  const { getAllFields, saveContacts, DEFAULT_FIELDS } = useApp();
+  const { getAllFields, saveContacts } = useApp();
   const [fields, setFields] = useState([]);
+  const [defaultFieldIds, setDefaultFieldIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [newField, setNewField] = useState({
@@ -18,6 +19,20 @@ const FieldsPage = () => {
   });
   const [optionInput, setOptionInput] = useState('');
 
+  // List of default field IDs (hardcoded)
+  const DEFAULT_FIELD_IDS = [
+    'instagram',
+    'firstName',
+    'gender',
+    'birthDate',
+    'location',
+    'relationType',
+    'meetingPlace',
+    'discussionStatus',
+    'nextMeeting',
+    'notes'
+  ];
+
   useEffect(() => {
     window.scrollTo(0, 0);
     loadFields();
@@ -26,6 +41,12 @@ const FieldsPage = () => {
   const loadFields = () => {
     const allFields = getAllFields();
     setFields(allFields);
+    
+    // Identify default fields
+    const defaultIds = allFields
+      .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
+      .map(f => f.id);
+    setDefaultFieldIds(defaultIds);
   };
 
   const handleDragEnd = async (result) => {
@@ -46,10 +67,10 @@ const FieldsPage = () => {
 
     // Separate default and custom fields
     const defaultFields = reorderedFields.filter(f => 
-      DEFAULT_FIELDS.some(df => df.id === f.id)
+      DEFAULT_FIELD_IDS.includes(f.id)
     );
     const customFields = reorderedFields.filter(f => 
-      !DEFAULT_FIELDS.some(df => df.id === f.id)
+      !DEFAULT_FIELD_IDS.includes(f.id)
     );
 
     // Prepare metadata with explicit structure
@@ -104,8 +125,8 @@ const FieldsPage = () => {
       ...(newField.options.length > 0 && { options: newField.options })
     };
 
-    const updatedCustomFields = [...fields.filter(f => !DEFAULT_FIELDS.some(df => df.id === f.id)), fieldToAdd];
-    const defaultFields = fields.filter(f => DEFAULT_FIELDS.some(df => df.id === f.id));
+    const updatedCustomFields = [...fields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id)), fieldToAdd];
+    const defaultFields = fields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
       defaultFields: defaultFields.map(f => ({
@@ -160,8 +181,8 @@ const FieldsPage = () => {
       f.id === editingField.id ? editingField : f
     );
 
-    const defaultFields = updatedFields.filter(f => DEFAULT_FIELDS.some(df => df.id === f.id));
-    const customFields = updatedFields.filter(f => !DEFAULT_FIELDS.some(df => df.id === f.id));
+    const defaultFields = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
+    const customFields = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
       defaultFields: defaultFields.map(f => ({
@@ -196,8 +217,8 @@ const FieldsPage = () => {
     }
 
     const updatedFields = fields.filter(f => f.id !== fieldId);
-    const defaultFields = updatedFields.filter(f => DEFAULT_FIELDS.some(df => df.id === f.id));
-    const customFields = updatedFields.filter(f => !DEFAULT_FIELDS.some(df => df.id === f.id));
+    const defaultFields = updatedFields.filter(f => DEFAULT_FIELD_IDS.includes(f.id));
+    const customFields = updatedFields.filter(f => !DEFAULT_FIELD_IDS.includes(f.id));
 
     const explicitMetadata = {
       defaultFields: defaultFields.map(f => ({
@@ -268,7 +289,7 @@ const FieldsPage = () => {
   };
 
   const isDefaultField = (fieldId) => {
-    return DEFAULT_FIELDS.some(f => f.id === fieldId);
+    return DEFAULT_FIELD_IDS.includes(fieldId);
   };
 
   return (
