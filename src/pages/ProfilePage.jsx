@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
-import { migrateTags } from '../scripts/migrateTags';
 import { db } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import '../styles/Profile.css';
@@ -82,9 +81,12 @@ const ProfilePage = () => {
     }
   };
 
+  // SCRIPTS DE MIGRATION CONSERVÉS (commentés mais disponibles)
+  /*
   const handleMigrateTags = async () => {
     if (window.confirm('⚠️ Cette opération va créer automatiquement tous les tags utilisés dans vos contacts. Continuer ?')) {
       try {
+        const { migrateTags } = await import('../scripts/migrateTags');
         const result = await migrateTags(currentUser.uid);
         if (result.success) {
           alert('✅ Migration réussie ! Vos tags ont été créés.');
@@ -145,6 +147,7 @@ const ProfilePage = () => {
       }
     }
   };
+  */
 
   return (
     <div className="profile-page">
@@ -273,17 +276,6 @@ const ProfilePage = () => {
         <button className="btn-logout" onClick={handleLogout}>
           🚪 Se déconnecter
         </button>
-        <div className="center-buttons">
-          <button className="btn-migrate-tags" onClick={handleMigrateGenderField}>
-            🚹 Migrer Sexe
-          </button>
-          <button className="btn-migrate-tags" onClick={handleMigrateToIndexValues}>
-            🔢 Migrer vers index
-          </button>
-          <button className="btn-migrate-tags" onClick={handleMigrateTags}>
-            🔄 Migrer les tags
-          </button>
-        </div>
         <button className="btn-delete-account" onClick={handleDeleteAccount}>
           🗑️ Supprimer mon compte
         </button>
