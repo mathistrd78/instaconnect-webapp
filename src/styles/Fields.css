@@ -1,24 +1,3 @@
-.back-button {
-  padding: 10px 20px;
-  margin-bottom: 24px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.back-button:hover {
-  background: var(--border-color);
-  transform: translateX(-2px);
-}
-
 .fields-page {
   padding: 32px;
   min-height: calc(100vh - 70px);
@@ -27,9 +6,6 @@
 
 .fields-header {
   margin-bottom: 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
 .fields-header h1 {
@@ -44,16 +20,19 @@
   font-size: 16px;
 }
 
+/* Add Field Button */
 .btn-add-field {
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   color: white;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-bottom: 32px;
+  display: inline-block;
 }
 
 .btn-add-field:hover {
@@ -61,7 +40,8 @@
   transform: translateY(-2px);
 }
 
-.add-field-form {
+/* Field Form */
+.field-form {
   background: var(--surface);
   border-radius: 20px;
   padding: 32px;
@@ -69,55 +49,48 @@
   box-shadow: var(--shadow);
 }
 
-.add-field-form h3 {
-  font-size: 20px;
+.field-form h2 {
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 24px;
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+.form-group {
   margin-bottom: 20px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .form-group label {
+  display: block;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
-.form-group input,
-.form-group select {
+.form-input {
+  width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 15px;
   background: var(--background);
   color: var(--text-primary);
+  transition: border-color 0.2s ease;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-input:focus {
   outline: none;
   border-color: #E1306C;
 }
 
-/* Options input */
+/* Options Management */
 .options-input {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
-.options-input input {
+.options-input .form-input {
   flex: 1;
 }
 
@@ -125,9 +98,9 @@
   padding: 12px 20px;
   border-radius: 10px;
   border: none;
-  background: var(--border-color);
-  color: var(--text-primary);
-  font-size: 14px;
+  background: rgba(225, 48, 108, 0.1);
+  color: #E1306C;
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -149,7 +122,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   background: var(--background);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -169,41 +142,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.2s ease;
 }
 
 .btn-remove-option:hover {
   opacity: 0.7;
 }
 
-.checkbox-label {
+/* Checkbox */
+.checkbox-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
   color: var(--text-primary);
   user-select: none;
 }
 
-.checkbox-label input {
+.checkbox-container input[type="checkbox"] {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  pointer-events: none;
+  accent-color: #E1306C;
 }
 
+/* Form Actions */
 .form-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
   margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-cancel,
 .btn-save {
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 12px;
   border: none;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -214,117 +192,100 @@
   color: var(--text-primary);
 }
 
+.btn-cancel:hover {
+  background: var(--text-secondary);
+  color: white;
+}
+
 .btn-save {
   background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
   color: white;
 }
 
-.btn-cancel:hover,
 .btn-save:hover {
   opacity: 0.9;
+  transform: translateY(-2px);
 }
 
-.fields-container {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
+/* Fields Section */
+.fields-section {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow);
 }
 
 .fields-section h2 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
-.fields-hint {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-}
-
+/* Fields List */
 .fields-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.field-card {
+/* Field Item */
+.field-item {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: var(--surface);
-  border-radius: 16px;
+  background: var(--background);
   border: 2px solid var(--border-color);
-  box-shadow: var(--shadow);
+  border-radius: 12px;
   transition: all 0.2s ease;
 }
 
-.field-card:hover {
+.field-item:hover {
+  border-color: #E1306C;
+  transform: translateX(4px);
+}
+
+.field-item.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
   border-color: #E1306C;
 }
 
-.field-card.dragging {
-  opacity: 0.5;
-  transform: rotate(2deg);
-}
-
-.drag-handle {
-  font-size: 20px;
+/* Drag Handle */
+.field-drag-handle {
+  font-size: 24px;
   color: var(--text-secondary);
   cursor: grab;
   user-select: none;
+  padding: 0 8px;
 }
 
-.drag-handle:active {
+.field-drag-handle:active {
   cursor: grabbing;
 }
 
+/* Field Info */
 .field-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   flex: 1;
-}
-
-.field-icon {
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: var(--background);
-}
-
-.field-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
-.field-label {
+.field-name {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.field-type {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.field-actions {
+.field-badges {
   display: flex;
-  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.badge-required,
-.badge-default,
-.badge-custom {
+.badge {
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 6px;
@@ -336,66 +297,79 @@
   color: #dc3545;
 }
 
-.badge-default {
-  background: rgba(0, 123, 255, 0.1);
-  color: #007bff;
+.badge-type {
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196F3;
 }
 
-.badge-custom {
-  background: rgba(225, 48, 108, 0.1);
-  color: #E1306C;
+/* Field Actions */
+.field-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.btn-edit-field,
-.btn-delete-field {
-  width: 36px;
-  height: 36px;
+.btn-edit,
+.btn-delete {
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   border: none;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn-edit-field {
+.btn-edit {
   background: rgba(218, 165, 32, 0.1);
   color: #DAA520;
 }
 
-.btn-edit-field:hover {
+.btn-edit:hover {
   background: #DAA520;
   color: white;
+  transform: scale(1.1);
 }
 
-.btn-delete-field {
+.btn-delete {
   background: rgba(220, 53, 69, 0.1);
   color: #dc3545;
 }
 
-.btn-delete-field:hover {
+.btn-delete:hover {
   background: #dc3545;
   color: white;
+  transform: scale(1.1);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .fields-page {
     padding: 16px;
   }
-  
-  .fields-header {
+
+  .field-form {
+    padding: 20px;
+  }
+
+  .fields-section {
+    padding: 20px;
+  }
+
+  .field-item {
     flex-direction: column;
-    gap: 16px;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .field-card {
-    flex-wrap: wrap;
-  }
-
-  .drag-handle {
+  .field-drag-handle {
     display: none;
+  }
+
+  .field-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
