@@ -65,7 +65,7 @@ const DEFAULT_FIELDS = [
     label: 'Sexe',
     required: true,
     order: 3,
-    options: ['Homme', 'Femme']
+    options: ['Homme', 'Femme', 'Autre']
   },
   {
     id: 'location',
