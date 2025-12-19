@@ -357,14 +357,18 @@ const FieldsPage = () => {
           )}
 
           <div className="form-group">
-            <label className="checkbox-container">
+            <div 
+              className="checkbox-container"
+              onClick={() => setEditingField({ ...editingField, required: !editingField.required })}
+            >
               <input
                 type="checkbox"
-                checked={editingField.required}
-                onChange={(e) => setEditingField({ ...editingField, required: e.target.checked })}
+                checked={editingField.required || false}
+                onChange={() => {}}
+                readOnly
               />
               <span className="checkbox-label-text">Champ obligatoire</span>
-            </label>
+            </div>
           </div>
 
           <div className="form-actions">
@@ -448,14 +452,18 @@ const FieldsPage = () => {
           )}
 
           <div className="form-group">
-            <label className="checkbox-container">
+            <div 
+              className="checkbox-container"
+              onClick={() => setNewField({ ...newField, required: !newField.required })}
+            >
               <input
                 type="checkbox"
-                checked={newField.required}
-                onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
+                checked={newField.required || false}
+                onChange={() => {}}
+                readOnly
               />
               <span className="checkbox-label-text">Champ obligatoire</span>
-            </label>
+            </div>
           </div>
 
           <div className="form-actions">
