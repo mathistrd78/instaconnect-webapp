@@ -8,9 +8,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  const [selectedMeetingDay, setSelectedMeetingDay] = useState('');
-  const [selectedMeetingMonth, setSelectedMeetingMonth] = useState('');
-  const [selectedMeetingYear, setSelectedMeetingYear] = useState('');
 
   const allFields = getAllFields();
 
@@ -27,16 +24,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
           setSelectedYear(String(date.getFullYear()));
         }
       }
-
-      // Parse nextMeeting
-      if (contact.nextMeeting) {
-        const date = new Date(contact.nextMeeting);
-        if (!isNaN(date.getTime())) {
-          setSelectedMeetingDay(String(date.getDate()).padStart(2, '0'));
-          setSelectedMeetingMonth(String(date.getMonth() + 1).padStart(2, '0'));
-          setSelectedMeetingYear(String(date.getFullYear()));
-        }
-      }
     }
   }, [contact]);
 
@@ -47,14 +34,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
       setFormData(prev => ({ ...prev, birthDate: dateStr }));
     }
   }, [selectedDay, selectedMonth, selectedYear]);
-
-  // Update nextMeeting when selects change
-  useEffect(() => {
-    if (selectedMeetingDay && selectedMeetingMonth && selectedMeetingYear) {
-      const dateStr = `${selectedMeetingYear}-${selectedMeetingMonth}-${selectedMeetingDay}`;
-      setFormData(prev => ({ ...prev, nextMeeting: dateStr }));
-    }
-  }, [selectedMeetingDay, selectedMeetingMonth, selectedMeetingYear]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -212,45 +191,8 @@ const ContactModal = ({ contact, onClose, onSave }) => {
               </select>
             </div>
           );
-        } else if (field.id === 'nextMeeting') {
-          return (
-            <div className="date-selects">
-              <select
-                className="form-input date-select"
-                value={selectedMeetingDay}
-                onChange={(e) => setSelectedMeetingDay(e.target.value)}
-                required={field.required}
-              >
-                <option value="">Jour</option>
-                {days.map(day => (
-                  <option key={day.value} value={day.value}>{day.label}</option>
-                ))}
-              </select>
-              <select
-                className="form-input date-select"
-                value={selectedMeetingMonth}
-                onChange={(e) => setSelectedMeetingMonth(e.target.value)}
-                required={field.required}
-              >
-                <option value="">Mois</option>
-                {months.map(month => (
-                  <option key={month.value} value={month.value}>{month.label}</option>
-                ))}
-              </select>
-              <select
-                className="form-input date-select"
-                value={selectedMeetingYear}
-                onChange={(e) => setSelectedMeetingYear(e.target.value)}
-                required={field.required}
-              >
-                <option value="">Année</option>
-                {years.map(year => (
-                  <option key={year.value} value={year.value}>{year.label}</option>
-                ))}
-              </select>
-            </div>
-          );
         } else {
+          // Pour tous les autres champs date (nextMeeting, etc.) - Date picker natif
           return (
             <input
               type="date"
