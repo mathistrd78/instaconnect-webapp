@@ -497,15 +497,7 @@ const FieldsPage = () => {
                         </div>
                         <div className="field-info">
                           <div className="field-name">{field.label}</div>
-                          <div className="field-badges">
-                            {field.required && (
-                              <span className="badge badge-required">Obligatoire</span>
-                            )}
-                            {field.id === 'instagram' && (
-                              <span className="badge badge-required">Requis</span>
-                            )}
-                            <span className="badge badge-type">{field.type}</span>
-                          </div>
+                          <div className="field-type">{field.type}</div>
                         </div>
                         <div className="field-actions">
                           {!isDefaultField(field.id) && (
@@ -526,6 +518,12 @@ const FieldsPage = () => {
                               </button>
                             </>
                           )}
+                          {field.required && (
+                            <span className="badge badge-required">Obligatoire</span>
+                          )}
+                          <span className={`badge ${isDefaultField(field.id) ? 'badge-default' : 'badge-custom'}`}>
+                            {isDefaultField(field.id) ? 'Par défaut' : 'Personnalisé'}
+                          </span>
                         </div>
                       </div>
                     )}
