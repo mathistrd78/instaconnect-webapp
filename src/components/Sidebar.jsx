@@ -11,6 +11,7 @@ const Sidebar = () => {
   { id: 'calendar', label: 'Calendrier', icon: '📅', path: '/app/calendrier' },
   { id: 'stats', label: 'Statistiques', icon: '📊', path: '/app/statistiques' },
   { id: 'unfollowers', label: 'Unfollowers', icon: '💔', path: '/app/unfollowers' },
+  { id: 'fans', label: 'Fans', icon: '🫶', path: '/app/fans' },
   { id: 'settings', label: 'Profil', icon: '👤', path: '/app/parametres' }
 ];
 
