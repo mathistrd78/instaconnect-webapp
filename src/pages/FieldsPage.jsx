@@ -19,7 +19,6 @@ const FieldsPage = () => {
   });
   const [optionInput, setOptionInput] = useState('');
 
-  // List of default field IDs (hardcoded)
   const DEFAULT_FIELD_IDS = [
     'instagram',
     'firstName',
@@ -38,7 +37,6 @@ const FieldsPage = () => {
     loadFields();
   }, []);
 
-  // Recharge les champs quand les données Firebase sont mises à jour
   useEffect(() => {
     loadFields();
   }, [customFields, defaultFields]);
@@ -48,7 +46,6 @@ const FieldsPage = () => {
     console.log('📥 Loading fields:', allFields.length);
     setFields(allFields);
     
-    // Identify default fields
     const defaultIds = allFields
       .filter(f => DEFAULT_FIELD_IDS.includes(f.id))
       .map(f => f.id);
@@ -62,16 +59,13 @@ const FieldsPage = () => {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Update order property for all fields
     const reorderedFields = items.map((field, index) => ({
       ...field,
       order: index
     }));
 
-    // Update local state immediately
     setFields(reorderedFields);
 
-    // Separate default and custom fields
     const defaultFields = reorderedFields.filter(f => 
       DEFAULT_FIELD_IDS.includes(f.id)
     );
@@ -79,7 +73,6 @@ const FieldsPage = () => {
       !DEFAULT_FIELD_IDS.includes(f.id)
     );
 
-    // Prepare metadata with explicit structure
     const explicitMetadata = {
       defaultFields: defaultFields.map(f => ({
         id: f.id,
@@ -101,7 +94,6 @@ const FieldsPage = () => {
       }))
     };
 
-    // Save to Firebase with explicit metadata
     try {
       await saveContacts(null, true, explicitMetadata);
       console.log('✅ Field order saved to Firebase');
@@ -117,13 +109,11 @@ const FieldsPage = () => {
       return;
     }
 
-    // Validate options for select/radio
     if ((newField.type === 'select' || newField.type === 'radio') && newField.options.length === 0) {
       alert('Veuillez ajouter au moins une option');
       return;
     }
 
-    // Find highest order number
     const maxOrder = Math.max(...fields.map(f => f.order || 0), -1);
 
     const fieldToAdd = {
@@ -161,7 +151,6 @@ const FieldsPage = () => {
 
     await saveContacts(null, true, explicitMetadata);
 
-    // Reset form
     setNewField({
       label: '',
       type: 'text',
@@ -171,7 +160,6 @@ const FieldsPage = () => {
     setOptionInput('');
     setShowForm(false);
 
-    // Reload fields
     loadFields();
   };
 
@@ -181,7 +169,6 @@ const FieldsPage = () => {
       return;
     }
 
-    // Validate options for select/radio
     if ((editingField.type === 'select' || editingField.type === 'radio') && editingField.options.length === 0) {
       alert('Veuillez ajouter au moins une option');
       return;
@@ -304,15 +291,23 @@ const FieldsPage = () => {
 
   return (
     <div className="fields-page">
+      <button 
+        className="btn-back"
+        onClick={() => navigate('/app/parametres')}
+      >
+        ← Retour aux paramètres
+      </button>
+
       <div className="fields-header">
-        <button 
-          className="btn-back"
-          onClick={() => navigate('/app/parametres')}
-        >
-          ← Retour aux paramètres
-        </button>
-        <h1>⚙️ Gestion des champs</h1>
-        <p className="fields-subtitle">Personnalisez les champs de vos contacts</p>
+        <div>
+          <h1>⚙️ Gestion des champs</h1>
+          <p className="fields-subtitle">Personnalisez les champs de vos contacts</p>
+        </div>
+        {!showForm && !editingField && (
+          <button className="btn-add-field" onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            + Ajouter un champ
+          </button>
+        )}
       </div>
 
       {/* Edit Form */}
@@ -487,13 +482,6 @@ const FieldsPage = () => {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Add Button */}
-      {!showForm && !editingField && (
-        <button className="btn-add-field" onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          + Ajouter un champ
-        </button>
       )}
 
       {/* Fields List */}
