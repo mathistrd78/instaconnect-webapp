@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { cityAutocomplete } from '../utils/cityAutocomplete';
 import ContactCard from '../components/ContactCard';
 import ContactModal from '../components/ContactModal';
 import FilterBar from '../components/FilterBar';
@@ -19,23 +20,18 @@ const ContactsPage = () => {
   const letterRefs = useRef({});
   const headerRef = useRef(null);
 
-  // Apply filters from navigation state (from StatsPage or AnalysePage)
   useEffect(() => {
     if (location.state?.filters) {
       setActiveFilters(location.state.filters);
-      // Clear navigation state
       window.history.replaceState({}, document.title);
     }
     
-    // Detect if we need to apply "Nouveaux" filter from AnalysePage
     if (location.state?.applyNewFilter) {
       setActiveFilters({ isNew: ['true'] });
-      // Clear navigation state
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
-  // Detect scroll to show/hide scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
       if (headerRef.current) {
@@ -48,7 +44,6 @@ const ContactsPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check if contact is complete
   const isContactComplete = (contact) => {
     const allFields = getAllFields();
     const requiredFields = allFields.filter(f => f.required);
@@ -59,10 +54,8 @@ const ContactsPage = () => {
   };
 
   useEffect(() => {
-    // Apply filters and search
     let filtered = [...contacts];
 
-    // Search filter - only search by firstName prefix
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(contact => {
@@ -71,21 +64,17 @@ const ContactsPage = () => {
       });
     }
 
-    // Apply active filters
     Object.keys(activeFilters).forEach(filterKey => {
       if (activeFilters[filterKey] && activeFilters[filterKey].length > 0) {
         filtered = filtered.filter(contact => {
-          // Special filter: isNew
           if (filterKey === 'isNew') {
             return contact.isNew === true;
           }
           
-          // Special filter: isFavorite
           if (filterKey === 'isFavorite') {
             return contact.isFavorite === true;
           }
           
-          // Special filter: isComplete
           if (filterKey === 'isComplete') {
             const isComplete = isContactComplete(contact);
             return activeFilters[filterKey].some(value => {
@@ -95,27 +84,28 @@ const ContactsPage = () => {
             });
           }
           
-          // Special filter: country
+          // Special filter: country (par countryCode)
           if (filterKey === 'country') {
-            let contactCountry = '';
+            let contactCountryCode = '';
+            
             if (contact.location) {
-              if (typeof contact.location === 'object' && contact.location.country) {
-                contactCountry = contact.location.country;
+              if (typeof contact.location === 'object' && contact.location.countryCode) {
+                contactCountryCode = contact.location.countryCode;
               } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-                contactCountry = contact.location.split(',').pop().trim();
+                const lastPart = contact.location.split(',').pop().trim();
+                contactCountryCode = cityAutocomplete.guessCountryCode(lastPart);
               }
             }
-            return activeFilters[filterKey].includes(contactCountry);
+            
+            return activeFilters[filterKey].includes(contactCountryCode);
           }
           
-          // Checkbox fields (like "dejaPecho")
           const field = getAllFields().find(f => f.id === filterKey);
           if (field && field.type === 'checkbox') {
             const contactValue = contact[filterKey] ? 'true' : 'false';
             return activeFilters[filterKey].includes(contactValue);
           }
           
-          // Radio/Select fields with index values
           if (field && (field.type === 'radio' || field.type === 'select')) {
             const contactValue = contact[filterKey];
             if (typeof contactValue === 'number') {
@@ -123,13 +113,11 @@ const ContactsPage = () => {
             }
           }
           
-          // Regular filters (old string values)
           return activeFilters[filterKey].includes(contact[filterKey]);
         });
       }
     });
 
-    // Sort alphabetically by firstName
     filtered.sort((a, b) => {
       const nameA = (a.firstName || '').toLowerCase();
       const nameB = (b.firstName || '').toLowerCase();
@@ -139,12 +127,10 @@ const ContactsPage = () => {
     setFilteredContacts(filtered);
   }, [contacts, searchQuery, activeFilters, getAllFields]);
 
-  // Group contacts by first letter (ignore @ for Instagram usernames)
   const groupedContacts = useMemo(() => {
     const groups = {};
     filteredContacts.forEach(contact => {
       let firstName = contact.firstName || '';
-      // Si le prénom commence par @, on prend la lettre suivante
       if (firstName.startsWith('@')) {
         firstName = firstName.substring(1);
       }
@@ -157,12 +143,10 @@ const ContactsPage = () => {
     return groups;
   }, [filteredContacts]);
 
-  // Get sorted letters
   const sortedLetters = useMemo(() => {
     return Object.keys(groupedContacts).sort();
   }, [groupedContacts]);
 
-  // Generate alphabet for quick navigation
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
 
   const scrollToLetter = (letter) => {
@@ -198,7 +182,6 @@ const ContactsPage = () => {
 
   return (
     <div className="contacts-page-web">
-      {/* Header */}
       <div className="contacts-header-web" ref={headerRef}>
         <div className="contacts-header-top">
           <div>
@@ -210,7 +193,6 @@ const ContactsPage = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="contacts-search">
           <span className="search-icon">🔍</span>
           <input
@@ -222,7 +204,6 @@ const ContactsPage = () => {
           />
         </div>
 
-        {/* Alphabet Quick Navigation */}
         <div className="alphabet-nav">
           {alphabet.map(letter => {
             const hasContacts = sortedLetters.includes(letter);
@@ -245,7 +226,6 @@ const ContactsPage = () => {
         />
       </div>
 
-      {/* Content */}
       <div className="contacts-content-web">
         {contacts.length === 0 ? (
           <EmptyState
@@ -283,7 +263,6 @@ const ContactsPage = () => {
         )}
       </div>
 
-      {/* Scroll to Top Button */}
       {showScrollTop && (
         <button 
           className="scroll-to-top-btn"
@@ -294,7 +273,6 @@ const ContactsPage = () => {
         </button>
       )}
 
-      {/* Contact Modal */}
       {showModal && (
         <ContactModal
           contact={editingContact}
