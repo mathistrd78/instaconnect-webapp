@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
+import CityAutocomplete from './CityAutocomplete';
 import '../styles/ContactModal.css';
 
 const ContactModal = ({ contact, onClose, onSave }) => {
-  const { getAllFields } = useApp();
+  const { getAllFields, contacts } = useApp();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({});
   const [selectedDay, setSelectedDay] = useState('');
@@ -95,18 +96,13 @@ const ContactModal = ({ contact, onClose, onSave }) => {
     // Instagram field is disabled
     const isDisabled = field.id === 'instagram';
 
-    // Special case for location field - always render as text input
+    // Special case for location field - use CityAutocomplete
     if (field.id === 'location') {
-      const displayValue = getDisplayValue(field);
-      
       return (
-        <input
-          type="text"
-          id={field.id}
-          className="form-input"
-          value={displayValue}
-          onChange={(e) => handleChange(field.id, e.target.value)}
-          required={field.required}
+        <CityAutocomplete
+          value={formData[field.id]}
+          onChange={(location) => handleChange(field.id, location)}
+          contacts={contacts}
           placeholder="Ex: Paris, France"
         />
       );
