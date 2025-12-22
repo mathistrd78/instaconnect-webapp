@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/FilterBar.css';
 
 const FilterBar = ({ activeFilters, onFilterChange }) => {
@@ -30,7 +31,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'isNew',
       label: 'Nouveaux',
       type: 'boolean',
-      order: -3, // First
+      order: -3,
       options: [
         { value: 'true', label: '✨ Nouveaux' }
       ]
@@ -39,7 +40,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'isFavorite',
       label: 'Favoris',
       type: 'boolean',
-      order: -2, // Second
+      order: -2,
       options: [
         { value: 'true', label: '⭐ Favoris' }
       ]
@@ -48,7 +49,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'isComplete',
       label: 'Profil complet',
       type: 'boolean',
-      order: -1, // Third
+      order: -1,
       options: [
         { value: 'true', label: '✅ Complet' },
         { value: 'false', label: '⚠️ Incomplet' }
@@ -58,43 +59,58 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'country',
       label: 'Pays',
       type: 'dynamic',
-      order: 1000, // Last
+      order: 1000,
       options: []
     }
   ];
 
   const getCountryOptions = () => {
-  const countries = new Set();
-  
-  contacts.forEach(contact => {
-    if (contact.location) {
-      let countryCode = '';
-      let countryName = '';
-      
-      if (typeof contact.location === 'object' && contact.location.countryCode) {
-        countryCode = contact.location.countryCode;
-        countryName = contact.location.country;
-      } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-        countryName = contact.location.split(',').pop().trim();
+    const countryMap = new Map();
+    
+    contacts.forEach(contact => {
+      if (contact.location) {
+        let countryCode = '';
+        let countryName = '';
+        
+        if (typeof contact.location === 'object' && contact.location.countryCode) {
+          countryCode = contact.location.countryCode;
+          countryName = cityAutocomplete.normalizeCountryName(
+            contact.location.country, 
+            countryCode
+          );
+        } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+          const parts = contact.location.split(',');
+          const lastPart = parts[parts.length - 1].trim();
+          countryCode = cityAutocomplete.guessCountryCode(lastPart);
+          
+          if (countryCode) {
+            countryName = cityAutocomplete.normalizeCountryName(lastPart, countryCode);
+          } else {
+            countryName = lastPart;
+          }
+        }
+        
+        if (countryCode) {
+          if (!countryMap.has(countryCode)) {
+            countryMap.set(countryCode, {
+              code: countryCode,
+              name: countryName,
+              flag: cityAutocomplete.getFlag(countryCode)
+            });
+          }
+        }
       }
-      
-      if (countryCode) {
-        // Grouper par countryCode pour éviter doublons
-        countries.add(`${countryCode}|${countryName}`);
-      }
-    }
-  });
-  
-  return Array.from(countries)
-    .map(entry => {
-      const [code, name] = entry.split('|');
-      return { value: code, label: name };
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
-};
+    });
+    
+    return Array.from(countryMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(country => ({
+        value: country.code,
+        label: `${country.flag} ${country.name}`
+      }));
+  };
 
   const getFieldOptions = (field) => {
-    // Special filters
     if (field.id === 'isNew' || field.id === 'isFavorite' || field.id === 'isComplete') {
       return field.options;
     }
@@ -103,7 +119,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       return getCountryOptions();
     }
 
-    // Checkbox fields
     if (field.type === 'checkbox') {
       return [
         { value: 'true', label: 'Oui' },
@@ -111,19 +126,16 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       ];
     }
 
-    // Radio fields use 'options' instead of 'tags'
     if (field.type === 'radio' && field.options) {
       return field.options.map((opt, index) => ({
-        value: index.toString(), // Use index as value for consistency
+        value: index.toString(),
         label: opt
       }));
     }
 
-    // Select fields with tags
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
     
-    // Remove duplicates based on value
     const uniqueTags = [];
     const seenValues = new Set();
     
@@ -132,7 +144,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       if (!seenValues.has(value)) {
         seenValues.add(value);
         uniqueTags.push({
-          value: index.toString(), // Use index as value
+          value: index.toString(),
           label: typeof tag === 'object' ? (tag.label || tag.value || tag) : tag
         });
       }
@@ -168,7 +180,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
   const hasActiveFilters = Object.values(activeFilters).some(f => f && f.length > 0);
 
-  // Combine and sort all filters by order
   const allFilters = [
     ...specialFilters,
     ...filterFields.map(f => ({ ...f, order: f.order !== undefined ? f.order : 500 }))
@@ -194,7 +205,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
             >
               {field.label}
               {activeCount > 0 && <span className="filter-count">{activeCount}</span>}
-              <span className="filter-arrow">{isOpen ? '▲' : '▼'}</span>
+              <span className="filter-arrow">{isOpen ? '▲' : '▼'}</span>}
             </button>
 
             {isOpen && (
