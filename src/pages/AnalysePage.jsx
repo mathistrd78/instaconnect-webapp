@@ -209,33 +209,32 @@ const AnalysePage = () => {
       }
 
       // Create sets for filtering
-      const normalUnfollowersSet = new Set(normalUnfollowers.map(u => u.toLowerCase()));
-      const doNotFollowSet = new Set(doNotFollowList.map(u => u.toLowerCase()));
+const normalUnfollowersSet = new Set(normalUnfollowers.map(u => u.toLowerCase()));
 
-      // Calculate stats - FILTER OUT normal unfollowers and do not follow list
-      const unfollowers = following.filter(u => {
-        const lowerU = u.toLowerCase();
-        return !followersSet.has(lowerU) && 
-               !normalUnfollowersSet.has(lowerU) && 
-               !doNotFollowSet.has(lowerU);
-      });
+// Calculate stats - FILTER OUT ONLY normal unfollowers (NOT doNotFollowList)
+const unfollowers = following.filter(u => {
+  const lowerU = u.toLowerCase();
+  return !followersSet.has(lowerU) && 
+         !normalUnfollowersSet.has(lowerU);
+  // NOTE: On n'exclut PAS doNotFollowList car l'utilisateur peut re-suivre ces comptes
+});
 
-      const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
-      const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
+const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
+const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
 
-      // Extract pending requests
-      let pendingRequests = [];
-      if (pendingData && pendingData.relationships_follow_requests_sent) {
-        pendingRequests = pendingData.relationships_follow_requests_sent
-          .flatMap(item => item.string_list_data || [])
-          .map(entry => entry.value)
-          .filter(Boolean);
-      }
+// Extract pending requests
+let pendingRequests = [];
+if (pendingData && pendingData.relationships_follow_requests_sent) {
+  pendingRequests = pendingData.relationships_follow_requests_sent
+    .flatMap(item => item.string_list_data || [])
+    .map(entry => entry.value)
+    .filter(Boolean);
+}
 
-      console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
-      console.log(`💔 ${unfollowers.length} unfollowers (filtered)`);
-      console.log(`🫶 ${fans.length} fans`);
-      console.log(`⏳ ${pendingRequests.length} pending requests`);
+console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
+console.log(`💔 ${unfollowers.length} unfollowers (filtered - excluding normalUnfollowers only)`);
+console.log(`🫶 ${fans.length} fans`);
+console.log(`⏳ ${pendingRequests.length} pending requests`);
 
       // ÉTAPE 1 : VÉRIFIER les contacts à supprimer (SANS LES SUPPRIMER)
       setProgress('Vérification des contacts existants...');
