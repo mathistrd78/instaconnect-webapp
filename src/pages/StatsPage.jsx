@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/Stats.css';
 
 const StatsPage = () => {
@@ -10,7 +11,6 @@ const StatsPage = () => {
 
   const allFields = getAllFields();
 
-  // Helper function to convert index to display value
   const getFieldDisplayValue = (field, value) => {
     if (value === undefined || value === null || value === '') {
       return 'Non renseigné';
@@ -42,13 +42,11 @@ const StatsPage = () => {
     return value;
   };
 
-  // Get all categorizable fields (select, radio, checkbox)
   const categorizableFields = useMemo(() => {
     const fields = allFields.filter(field => 
       field.type === 'select' || field.type === 'radio' || field.type === 'checkbox'
     );
     
-    // Add virtual "country" field
     fields.push({
       id: 'country',
       label: 'Pays',
@@ -58,14 +56,12 @@ const StatsPage = () => {
     return fields;
   }, [allFields]);
 
-  // Set first field as active tab if exists
   React.useEffect(() => {
     if (categorizableFields.length > 0 && !activeTab) {
       setActiveTab(categorizableFields[0].id);
     }
   }, [categorizableFields, activeTab]);
 
-  // Check if contact is complete
   const isContactComplete = (contact) => {
     const requiredFields = allFields.filter(f => f.required);
     return requiredFields.every(field => {
@@ -74,7 +70,6 @@ const StatsPage = () => {
     });
   };
 
-  // Calculate stats
   const stats = useMemo(() => {
     const total = contacts.length;
     const complete = contacts.filter(isContactComplete).length;
@@ -83,58 +78,59 @@ const StatsPage = () => {
     return { total, complete, incomplete };
   }, [contacts, allFields]);
 
-  // Normalize country name
-  const normalizeCountry = (country) => {
-    const mapping = {
-      'germany': 'Allemagne',
-      'united states': 'États-Unis',
-      'united states of america': 'États-Unis',
-      'etats-unis d\'amerique': 'États-Unis',
-      'usa': 'États-Unis',
-      'uk': 'Royaume-Uni',
-      'united kingdom': 'Royaume-Uni',
-      'spain': 'Espagne',
-      'italy': 'Italie',
-      'france': 'France'
-    };
-    
-    const lower = country.toLowerCase().trim();
-    return mapping[lower] || country;
-  };
-
-  // Get distribution for a field (excluding undefined/null/empty)
   const getFieldDistribution = (fieldId) => {
     // Special case for country
     if (fieldId === 'country') {
-      const distribution = {};
-      let totalDefined = 0;
-
+      const countryMap = new Map();
+      
       contacts.forEach(contact => {
-        let country = '';
         if (contact.location) {
-          if (typeof contact.location === 'object' && contact.location.country) {
-            country = contact.location.country;
+          let countryCode = '';
+          let countryName = '';
+          
+          if (typeof contact.location === 'object' && contact.location.countryCode) {
+            countryCode = contact.location.countryCode;
+            countryName = cityAutocomplete.normalizeCountryName(
+              contact.location.country,
+              countryCode
+            );
           } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-            country = contact.location.split(',').pop().trim();
+            const parts = contact.location.split(',');
+            const lastPart = parts[parts.length - 1].trim();
+            countryCode = cityAutocomplete.guessCountryCode(lastPart);
+            
+            if (countryCode) {
+              countryName = cityAutocomplete.normalizeCountryName(lastPart, countryCode);
+            } else {
+              countryName = lastPart;
+            }
+          }
+          
+          if (countryCode) {
+            if (!countryMap.has(countryCode)) {
+              countryMap.set(countryCode, {
+                code: countryCode,
+                name: countryName,
+                flag: cityAutocomplete.getFlag(countryCode),
+                count: 0
+              });
+            }
+            
+            const existing = countryMap.get(countryCode);
+            existing.count++;
           }
         }
-        
-        if (country) {
-          const normalized = normalizeCountry(country);
-          distribution[normalized] = (distribution[normalized] || 0) + 1;
-          totalDefined++;
-        }
       });
+      
+      const data = Array.from(countryMap.values())
+        .map(country => ({
+          label: `${country.flag} ${country.name}`,
+          count: country.count,
+          percentage: contacts.length > 0 ? ((country.count / contacts.length) * 100).toFixed(1) : 0
+        }))
+        .sort((a, b) => b.count - a.count);
 
-      const data = Object.entries(distribution).map(([label, count]) => ({
-        label,
-        count,
-        percentage: totalDefined > 0 ? ((count / totalDefined) * 100).toFixed(1) : 0
-      }));
-
-      data.sort((a, b) => b.count - a.count);
-
-      return { data, totalDefined };
+      return { data, totalDefined: data.reduce((sum, d) => sum + d.count, 0) };
     }
 
     // Regular field
@@ -164,7 +160,6 @@ const StatsPage = () => {
     return { data, totalDefined };
   };
 
-  // Colors for pie chart
   const colors = [
     '#E1306C', '#C13584', '#F77737', '#FCAF45', '#833AB4',
     '#FD1D1D', '#405DE6', '#5B51D8', '#C32AA3', '#F56040'
@@ -175,7 +170,6 @@ const StatsPage = () => {
     ? getFieldDistribution(activeField.id) 
     : { data: [], totalDefined: 0 };
 
-  // Calculate pie chart segments
   const createPieChart = (data) => {
     if (data.length === 0) return [];
 
@@ -201,7 +195,6 @@ const StatsPage = () => {
 
   const pieSegments = createPieChart(chartData);
 
-  // Create SVG path for pie segment
   const createArc = (startAngle, endAngle, radius = 100) => {
     const start = polarToCartesian(120, 120, radius, endAngle);
     const end = polarToCartesian(120, 120, radius, startAngle);
@@ -226,14 +219,12 @@ const StatsPage = () => {
   const handleLegendClick = (displayLabel) => {
     if (!activeField) return;
 
-    // Special case for country - navigate with country filter
     if (activeField.id === 'country') {
       const filters = { country: [displayLabel] };
       navigate('/app/contacts', { state: { filters } });
       return;
     }
 
-    // Find the original value (index or string) that matches this display label
     const matchingContact = contacts.find(contact => {
       const value = contact[activeField.id];
       if (value === undefined || value === null || value === '') return false;
