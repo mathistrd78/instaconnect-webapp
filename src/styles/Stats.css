@@ -40,8 +40,12 @@
   transition: all 0.2s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -131,6 +135,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .pie-chart {
@@ -140,12 +145,13 @@
 }
 
 .pie-segment {
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .pie-segment:hover {
   opacity: 0.8;
+  filter: brightness(1.1);
 }
 
 /* Legend */
