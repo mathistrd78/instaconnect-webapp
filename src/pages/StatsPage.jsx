@@ -296,56 +296,58 @@ const StatsPage = () => {
   };
 
   const handleLegendClick = (displayLabel) => {
-    if (!activeField) return;
+  if (!activeField) return;
 
-    if (activeField.id === 'country') {
-      const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
-      
-      if (countryCode) {
-        let foundCode = '';
-        contacts.forEach(contact => {
-          if (contact.location) {
-            let code = '';
-            let name = '';
-            
-            if (typeof contact.location === 'object' && contact.location.countryCode) {
-              code = contact.location.countryCode;
-              name = cityAutocomplete.normalizeCountryName(contact.location.country, code);
-            } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-              const lastPart = contact.location.split(',').pop().trim();
-              code = cityAutocomplete.guessCountryCode(lastPart);
-              if (code) {
-                name = cityAutocomplete.normalizeCountryName(lastPart, code);
-              }
-            }
-            
-            const flag = cityAutocomplete.getFlag(code);
-            if (`${flag} ${name}` === displayLabel && !foundCode) {
-              foundCode = code;
+  if (activeField.id === 'country') {
+    const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
+    
+    if (countryCode) {
+      let foundCode = '';
+      contacts.forEach(contact => {
+        if (contact.location) {
+          let code = '';
+          let name = '';
+          
+          if (typeof contact.location === 'object' && contact.location.countryCode) {
+            code = contact.location.countryCode;
+            name = cityAutocomplete.normalizeCountryName(contact.location.country, code);
+          } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+            const lastPart = contact.location.split(',').pop().trim();
+            code = cityAutocomplete.guessCountryCode(lastPart);
+            if (code) {
+              name = cityAutocomplete.normalizeCountryName(lastPart, code);
             }
           }
-        });
-        
-        if (foundCode) {
-          const filters = { country: [foundCode] };
-          navigate('/app/contacts', { state: { filters } });
+          
+          const flag = cityAutocomplete.getFlag(code);
+          if (`${flag} ${name}` === displayLabel && !foundCode) {
+            foundCode = code;
+          }
         }
+      });
+      
+      if (foundCode) {
+        const filters = { country: [foundCode] };
+        navigate('/app/contacts', { state: { filters } });
       }
-      return;
     }
+    return;
+  }
 
-    const matchingContact = contacts.find(contact => {
-      const value = contact[activeField.id];
-      if (value === undefined || value === null || value === '') return false;
-      return getFieldDisplayValue(activeField, value) === displayLabel;
-    });
+  const matchingContact = contacts.find(contact => {
+    const value = contact[activeField.id];
+    if (value === undefined || value === null || value === '') return false;
+    return getFieldDisplayValue(activeField, value) === displayLabel;
+  });
 
-    if (matchingContact) {
-      const originalValue = matchingContact[activeField.id];
-      const filters = { [activeField.id]: [originalValue] };
-      navigate('/app/contacts', { state: { filters } });
-    }
-  };
+  if (matchingContact) {
+    const originalValue = matchingContact[activeField.id];
+    // IMPORTANT: Toujours convertir en string pour les filtres
+    const filterValue = typeof originalValue === 'number' ? originalValue.toString() : originalValue;
+    const filters = { [activeField.id]: [filterValue] };
+    navigate('/app/contacts', { state: { filters } });
+  }
+};
 
   // Navigation depuis les cards de stats
   const handleStatCardClick = (type) => {
