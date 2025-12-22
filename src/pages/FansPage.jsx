@@ -109,13 +109,13 @@ const FansPage = () => {
         </div>
 
         {fansData.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🫶</div>
-            <p className="empty-message">Aucun fan pour le moment</p>
-            <p className="empty-description">
-              Les personnes qui vous suivent sans que vous les suiviez en retour apparaîtront ici
-            </p>
-          </div>
+  <div className="empty-state">
+    <div className="empty-icon">📭</div>
+    <p className="empty-message">Aucun contact dans cette liste.</p>
+    <p className="empty-description">
+      Veuillez lancer une nouvelle analyse.
+    </p>
+  </div>
         ) : (
           <>
             <div className="search-container">
