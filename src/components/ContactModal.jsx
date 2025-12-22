@@ -95,6 +95,23 @@ const ContactModal = ({ contact, onClose, onSave }) => {
     // Instagram field is disabled
     const isDisabled = field.id === 'instagram';
 
+    // Special case for location field - always render as text input
+    if (field.id === 'location') {
+      const displayValue = getDisplayValue(field);
+      
+      return (
+        <input
+          type="text"
+          id={field.id}
+          className="form-input"
+          value={displayValue}
+          onChange={(e) => handleChange(field.id, e.target.value)}
+          required={field.required}
+          placeholder="Ex: Paris, France"
+        />
+      );
+    }
+
     switch (field.type) {
       case 'text':
         const displayValue = getDisplayValue(field);
@@ -108,7 +125,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
             onChange={(e) => handleChange(field.id, e.target.value)}
             required={field.required}
             disabled={isDisabled}
-            placeholder={field.id === 'location' ? 'Ex: Paris, France' : ''}
           />
         );
 
