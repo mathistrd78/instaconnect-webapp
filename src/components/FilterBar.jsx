@@ -19,13 +19,11 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get all fields that can be filtered (select, radio, checkbox)
   const filterFields = [
     ...defaultFields.filter(f => f.type === 'select' || f.type === 'radio' || f.type === 'checkbox'),
     ...customFields.filter(f => f.type === 'select' || f.type === 'radio' || f.type === 'checkbox')
   ];
 
-  // Add special filters IN ORDER
   const specialFilters = [
     {
       id: 'isNew',
@@ -205,7 +203,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
             >
               {field.label}
               {activeCount > 0 && <span className="filter-count">{activeCount}</span>}
-              <span className="filter-arrow">{isOpen ? '▲' : '▼'}</span>}
+              <span className="filter-arrow">{isOpen ? '▲' : '▼'}</span>
             </button>
 
             {isOpen && (
