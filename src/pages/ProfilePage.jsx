@@ -113,7 +113,10 @@ const ProfilePage = () => {
         </div>
 
         <div className="profile-stats-grid">
-          <div className="profile-stat-card">
+          <div 
+            className="profile-stat-card clickable" 
+            onClick={() => navigate('/app/contacts')}
+          >
             <div className="stat-value">{totalContacts}</div>
             <div className="stat-label">Contacts</div>
           </div>
@@ -128,15 +131,24 @@ const ProfilePage = () => {
         </div>
 
         <div className="profile-stats-grid">
-          <div className="profile-stat-card">
+          <div 
+            className="profile-stat-card clickable" 
+            onClick={() => navigate('/app/unfollowers')}
+          >
             <div className="stat-value">{instagramStats.unfollowers}</div>
             <div className="stat-label">Unfollowers</div>
           </div>
-          <div className="profile-stat-card">
+          <div 
+            className="profile-stat-card clickable" 
+            onClick={() => navigate('/app/fans')}
+          >
             <div className="stat-value">{instagramStats.fans}</div>
             <div className="stat-label">Fans</div>
           </div>
-          <div className="profile-stat-card">
+          <div 
+            className="profile-stat-card clickable" 
+            onClick={() => navigate('/app/demandes')}
+          >
             <div className="stat-value">{instagramStats.pendingRequests}</div>
             <div className="stat-label">Demandes en attente</div>
           </div>
