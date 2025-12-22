@@ -1,5 +1,4 @@
 /* Analyse.css */
-
 .analyse-page {
   padding: 32px;
 }
@@ -95,6 +94,22 @@
   cursor: not-allowed;
 }
 
+/* Progress */
+.analyse-progress {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.progress-text {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 /* Results */
 .analyse-results {
   background: var(--surface);
@@ -102,55 +117,49 @@
   padding: 32px;
   margin-bottom: 32px;
   box-shadow: var(--shadow-lg);
+  border: 2px solid var(--border-color);
 }
 
 .analyse-results h3 {
-  font-size: 24px;
-  color: #28a745;
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.results-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 20px;
-  background: var(--background);
-  border-radius: 12px;
-}
-
-.stat-label {
-  display: block;
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.stat-value {
-  display: block;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #28a745;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
-.success-message {
-  text-align: center;
-  padding: 16px;
-  background: rgba(40, 167, 69, 0.1);
-  border-radius: 12px;
+.results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+}
+
+.result-card.success .result-value {
   color: #28a745;
-  font-weight: 600;
-  font-size: 16px;
+}
+
+.result-card.danger .result-value {
+  color: #dc3545;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.result-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Instructions */
@@ -220,10 +229,6 @@
   
   .upload-text {
     font-size: 16px;
-  }
-  
-  .results-stats {
-    grid-template-columns: repeat(2, 1fr);
   }
   
   .analyse-instructions {
