@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import FilterBar from '../components/FilterBar';
 import '../styles/Stats.css';
 
 const StatsPage = () => {
   const { contacts, getAllFields } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('relationType');
+  const [activeFilters, setActiveFilters] = useState({});
 
   const allFields = getAllFields();
 
@@ -16,7 +18,6 @@ const StatsPage = () => {
       return 'Non renseigné';
     }
 
-    // Si le champ est select et que la valeur est un nombre (index)
     if (field.type === 'select' && typeof value === 'number') {
       if (field.tags && field.tags[value]) {
         return field.tags[value].label || field.tags[value].value || field.tags[value];
@@ -24,7 +25,6 @@ const StatsPage = () => {
       return `Option ${value}`;
     }
     
-    // Si le champ est radio et que la valeur est un nombre (index)
     if (field.type === 'radio' && typeof value === 'number') {
       if (field.options && field.options[value]) {
         return field.options[value];
@@ -32,13 +32,11 @@ const StatsPage = () => {
       return `Option ${value}`;
     }
     
-    // Pour les anciennes valeurs texte (select)
     if (field.type === 'select' && typeof value === 'string') {
       const tag = field.tags?.find(t => (t.value || t) === value);
       return tag ? (tag.label || tag.value || tag) : value;
     }
 
-    // Pour les anciennes valeurs texte (radio)
     if (field.type === 'radio' && typeof value === 'string') {
       return value;
     }
@@ -46,10 +44,10 @@ const StatsPage = () => {
     return value;
   };
 
-  // Get all categorizable fields (select, radio)
+  // Get all categorizable fields (select, radio, checkbox)
   const categorizableFields = useMemo(() => {
     return allFields.filter(field => 
-      field.type === 'select' || field.type === 'radio'
+      field.type === 'select' || field.type === 'radio' || field.type === 'checkbox'
     );
   }, [allFields]);
 
@@ -69,16 +67,80 @@ const StatsPage = () => {
     });
   };
 
+  // Apply filters to contacts
+  const filteredContacts = useMemo(() => {
+    let filtered = [...contacts];
+
+    Object.keys(activeFilters).forEach(filterKey => {
+      if (activeFilters[filterKey] && activeFilters[filterKey].length > 0) {
+        filtered = filtered.filter(contact => {
+          // Special filter: isNew
+          if (filterKey === 'isNew') {
+            return contact.isNew === true;
+          }
+          
+          // Special filter: isFavorite
+          if (filterKey === 'isFavorite') {
+            return contact.isFavorite === true;
+          }
+          
+          // Special filter: isComplete
+          if (filterKey === 'isComplete') {
+            const isComplete = isContactComplete(contact);
+            return activeFilters[filterKey].some(value => {
+              if (value === 'true') return isComplete;
+              if (value === 'false') return !isComplete;
+              return false;
+            });
+          }
+          
+          // Special filter: country
+          if (filterKey === 'country') {
+            let contactCountry = '';
+            if (contact.location) {
+              if (typeof contact.location === 'object' && contact.location.country) {
+                contactCountry = contact.location.country;
+              } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+                contactCountry = contact.location.split(',').pop().trim();
+              }
+            }
+            return activeFilters[filterKey].includes(contactCountry);
+          }
+          
+          // Checkbox fields
+          const field = getAllFields().find(f => f.id === filterKey);
+          if (field && field.type === 'checkbox') {
+            const contactValue = contact[filterKey] ? 'true' : 'false';
+            return activeFilters[filterKey].includes(contactValue);
+          }
+          
+          // Radio/Select fields with index values
+          if (field && (field.type === 'radio' || field.type === 'select')) {
+            const contactValue = contact[filterKey];
+            if (typeof contactValue === 'number') {
+              return activeFilters[filterKey].includes(contactValue.toString());
+            }
+          }
+          
+          // Regular filters
+          return activeFilters[filterKey].includes(contact[filterKey]);
+        });
+      }
+    });
+
+    return filtered;
+  }, [contacts, activeFilters, getAllFields]);
+
   // Calculate stats
   const stats = useMemo(() => {
-    const total = contacts.length;
-    const complete = contacts.filter(isContactComplete).length;
+    const total = filteredContacts.length;
+    const complete = filteredContacts.filter(isContactComplete).length;
     const incomplete = total - complete;
 
     return { total, complete, incomplete };
-  }, [contacts, allFields]);
+  }, [filteredContacts, allFields]);
 
-  // Get distribution for a field (excluding undefined/null/empty)
+  // Get distribution for a field (using filtered contacts)
   const getFieldDistribution = (fieldId) => {
     const field = allFields.find(f => f.id === fieldId);
     if (!field) return { data: [], totalDefined: 0 };
@@ -86,24 +148,21 @@ const StatsPage = () => {
     const distribution = {};
     let totalDefined = 0;
 
-    contacts.forEach(contact => {
+    filteredContacts.forEach(contact => {
       const value = contact[fieldId];
       if (value !== undefined && value !== null && value !== '') {
-        // Convert index to display value
         const displayValue = getFieldDisplayValue(field, value);
         distribution[displayValue] = (distribution[displayValue] || 0) + 1;
         totalDefined++;
       }
     });
 
-    // Convert to array and calculate percentages
     const data = Object.entries(distribution).map(([label, count]) => ({
       label,
       count,
       percentage: totalDefined > 0 ? ((count / totalDefined) * 100).toFixed(1) : 0
     }));
 
-    // Sort by count descending (most frequent first)
     data.sort((a, b) => b.count - a.count);
 
     return { data, totalDefined };
@@ -171,8 +230,7 @@ const StatsPage = () => {
   const handleLegendClick = (displayLabel) => {
     if (!activeField) return;
 
-    // Find the original value (index or string) that matches this display label
-    const matchingContact = contacts.find(contact => {
+    const matchingContact = filteredContacts.find(contact => {
       const value = contact[activeField.id];
       if (value === undefined || value === null || value === '') return false;
       return getFieldDisplayValue(activeField, value) === displayLabel;
@@ -190,6 +248,14 @@ const StatsPage = () => {
       <div className="stats-header">
         <h1>📊 Statistiques</h1>
         <p className="stats-subtitle">Visualisez vos données de contacts</p>
+      </div>
+
+      {/* FilterBar */}
+      <div className="stats-filters">
+        <FilterBar
+          activeFilters={activeFilters}
+          onFilterChange={setActiveFilters}
+        />
       </div>
 
       <div className="stats-summary">
