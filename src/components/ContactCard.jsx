@@ -8,7 +8,6 @@ const ContactCard = ({ contact, onEdit }) => {
   
   const allFields = getAllFields();
 
-  // Helper function to get display value for radio/select fields
   const getFieldDisplayValue = (field, value) => {
     if (value === undefined || value === '' || value === null) {
       return null;
@@ -40,32 +39,6 @@ const ContactCard = ({ contact, onEdit }) => {
     return value;
   };
 
-  const getLocationDisplay = () => {
-    if (!contact.location) return null;
-    
-    if (typeof contact.location === 'object' && contact.location !== null) {
-      if (contact.location.displayName) {
-        return contact.location.displayName;
-      }
-      if (contact.location.city && contact.location.country) {
-        return `${contact.location.city}, ${contact.location.country}`;
-      }
-      if (contact.location.city) {
-        return contact.location.city;
-      }
-      if (contact.location.country) {
-        return contact.location.country;
-      }
-    }
-    
-    if (typeof contact.location === 'string') {
-      return contact.location;
-    }
-    
-    return null;
-  };
-
-  // Get country flag from location
   const getCountryFlag = () => {
     if (!contact.location) return null;
     
@@ -111,7 +84,6 @@ const ContactCard = ({ contact, onEdit }) => {
       : `@${contact.instagram}`;
   };
 
-  // Retirer le badge "Nouveau" quand on clique pour éditer
   const handleEdit = async () => {
     if (contact.isNew) {
       await updateContact(contact.id, { ...contact, isNew: false });
@@ -169,19 +141,6 @@ const ContactCard = ({ contact, onEdit }) => {
           <div className="contact-tag">
             <span className="tag-label">Statut:</span>
             <span className="tag-value">{getTagDisplay('discussionStatus')}</span>
-          </div>
-        )}
-
-        {getLocationDisplay() && (
-          <div className="contact-location">
-            📍 {getLocationDisplay()}
-          </div>
-        )}
-
-        {contact.notes && (
-          <div className="contact-notes">
-            {contact.notes.substring(0, 80)}
-            {contact.notes.length > 80 && '...'}
           </div>
         )}
       </div>
