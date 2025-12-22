@@ -8,13 +8,13 @@ import '../styles/Analyse.css';
 
 const AnalysePage = () => {
   const navigate = useNavigate();
-  const { contacts, addContact, deleteMultipleContacts } = useApp();
+  const { contacts, addContact, deleteMultipleContacts, updateContact } = useApp();
   const { currentUser } = useAuth();
   const [file, setFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState('');
   const [results, setResults] = useState(null);
-  const [deletedContacts, setDeletedContacts] = useState([]); // Store deleted contacts info
+  const [deletedContacts, setDeletedContacts] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileSelect = (e) => {
@@ -54,16 +54,13 @@ const AnalysePage = () => {
   const handleResultClick = (type) => {
     switch(type) {
       case 'created':
-        // Redirect to contacts page with "new" filter
         navigate('/app/contacts', { 
           state: { 
-            showNewContacts: true,
-            createdAfter: new Date().toISOString()
+            applyNewFilter: true
           }
         });
         break;
       case 'deleted':
-        // Show deleted contacts list in modal
         if (deletedContacts.length > 0) {
           showDeletedContactsModal();
         }
@@ -125,6 +122,18 @@ const AnalysePage = () => {
     setProgress('Extraction du fichier ZIP...');
     
     try {
+      // ÉTAPE 0 : Retirer le badge "Nouveau" de TOUS les contacts existants
+      setProgress('Préparation de l\'analyse...');
+      console.log('🔄 Removing isNew badge from all existing contacts...');
+      
+      for (const contact of contacts) {
+        if (contact.isNew) {
+          await updateContact(contact.id, { ...contact, isNew: false });
+        }
+      }
+      
+      console.log('✅ All existing contacts updated (isNew = false)');
+
       // Load JSZip
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(file);
@@ -209,32 +218,31 @@ const AnalysePage = () => {
       }
 
       // Create sets for filtering
-const normalUnfollowersSet = new Set(normalUnfollowers.map(u => u.toLowerCase()));
+      const normalUnfollowersSet = new Set(normalUnfollowers.map(u => u.toLowerCase()));
 
-// Calculate stats - FILTER OUT ONLY normal unfollowers (NOT doNotFollowList)
-const unfollowers = following.filter(u => {
-  const lowerU = u.toLowerCase();
-  return !followersSet.has(lowerU) && 
-         !normalUnfollowersSet.has(lowerU);
-  // NOTE: On n'exclut PAS doNotFollowList car l'utilisateur peut re-suivre ces comptes
-});
+      // Calculate stats - FILTER OUT ONLY normal unfollowers (NOT doNotFollowList)
+      const unfollowers = following.filter(u => {
+        const lowerU = u.toLowerCase();
+        return !followersSet.has(lowerU) && 
+               !normalUnfollowersSet.has(lowerU);
+      });
 
-const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
-const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
+      const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
+      const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
 
-// Extract pending requests
-let pendingRequests = [];
-if (pendingData && pendingData.relationships_follow_requests_sent) {
-  pendingRequests = pendingData.relationships_follow_requests_sent
-    .flatMap(item => item.string_list_data || [])
-    .map(entry => entry.value)
-    .filter(Boolean);
-}
+      // Extract pending requests
+      let pendingRequests = [];
+      if (pendingData && pendingData.relationships_follow_requests_sent) {
+        pendingRequests = pendingData.relationships_follow_requests_sent
+          .flatMap(item => item.string_list_data || [])
+          .map(entry => entry.value)
+          .filter(Boolean);
+      }
 
-console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
-console.log(`💔 ${unfollowers.length} unfollowers (filtered - excluding normalUnfollowers only)`);
-console.log(`🫶 ${fans.length} fans`);
-console.log(`⏳ ${pendingRequests.length} pending requests`);
+      console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
+      console.log(`💔 ${unfollowers.length} unfollowers (filtered - excluding normalUnfollowers only)`);
+      console.log(`🫶 ${fans.length} fans`);
+      console.log(`⏳ ${pendingRequests.length} pending requests`);
 
       // ÉTAPE 1 : VÉRIFIER les contacts à supprimer (SANS LES SUPPRIMER)
       setProgress('Vérification des contacts existants...');
@@ -261,7 +269,6 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
         );
         
         if (!confirmed) {
-          // ANNULATION COMPLÈTE - Aucune modification effectuée
           console.log('❌ Analysis cancelled by user - NO modifications made');
           setAnalyzing(false);
           setProgress('');
@@ -272,7 +279,7 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
             `vérifiez que vous avez bien sélectionné "Depuis le début" lors de l'export Instagram.`
           );
           
-          return; // Arrêter l'analyse complètement
+          return;
         }
       }
       
@@ -287,7 +294,6 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
       if (contactsToDelete.length > 0) {
         console.log(`🗑️ User confirmed - Deleting ${contactsToDelete.length} contact(s)...`);
         
-        // Store deleted usernames for modal
         deletedUsernames.push(...contactsToDelete.map(c => c.instagram || c.firstName));
         
         const contactIdsToDelete = contactsToDelete.map(c => c.id);
@@ -315,7 +321,7 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
           continue;
         }
 
-        // Create new contact
+        // Create new contact WITH isNew badge
         const newContact = {
           firstName: `@${username}`,
           instagram: `@${username}`,
@@ -326,7 +332,8 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
           location: '',
           birthDate: '',
           nextMeeting: '',
-          notes: ''
+          notes: '',
+          isNew: true // ← BADGE NOUVEAU
         };
 
         await addContact(newContact);
@@ -495,7 +502,6 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
         <div className="analyse-instructions">
           <h3>📱 Comment exporter vos données Instagram ?</h3>
 
-          {/* Mobile Instructions */}
           <div className="instructions-section">
             <h4>📱 Sur mobile</h4>
             <ol>
@@ -513,7 +519,6 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
             </ol>
           </div>
 
-          {/* Desktop Instructions */}
           <div className="instructions-section">
             <h4>💻 Sur ordinateur</h4>
             <ol>
@@ -532,7 +537,6 @@ console.log(`⏳ ${pendingRequests.length} pending requests`);
             </ol>
           </div>
 
-          {/* Note */}
           <div className="instructions-note">
             <strong>⏱️ Note :</strong> Le traitement peut prendre de quelques minutes à quelques heures selon la quantité de données. 
             Vous recevrez un email d'Instagram quand votre export sera prêt à télécharger.
