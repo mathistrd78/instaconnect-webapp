@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import FilterBar from '../components/FilterBar';
 import '../styles/Stats.css';
 
 const StatsPage = () => {
   const { contacts, getAllFields } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('relationType');
-  const [activeFilters, setActiveFilters] = useState({});
 
   const allFields = getAllFields();
 
@@ -46,9 +44,18 @@ const StatsPage = () => {
 
   // Get all categorizable fields (select, radio, checkbox)
   const categorizableFields = useMemo(() => {
-    return allFields.filter(field => 
+    const fields = allFields.filter(field => 
       field.type === 'select' || field.type === 'radio' || field.type === 'checkbox'
     );
+    
+    // Add virtual "country" field
+    fields.push({
+      id: 'country',
+      label: 'Pays',
+      type: 'virtual'
+    });
+    
+    return fields;
   }, [allFields]);
 
   // Set first field as active tab if exists
@@ -67,88 +74,77 @@ const StatsPage = () => {
     });
   };
 
-  // Apply filters to contacts
-  const filteredContacts = useMemo(() => {
-    let filtered = [...contacts];
-
-    Object.keys(activeFilters).forEach(filterKey => {
-      if (activeFilters[filterKey] && activeFilters[filterKey].length > 0) {
-        filtered = filtered.filter(contact => {
-          // Special filter: isNew
-          if (filterKey === 'isNew') {
-            return contact.isNew === true;
-          }
-          
-          // Special filter: isFavorite
-          if (filterKey === 'isFavorite') {
-            return contact.isFavorite === true;
-          }
-          
-          // Special filter: isComplete
-          if (filterKey === 'isComplete') {
-            const isComplete = isContactComplete(contact);
-            return activeFilters[filterKey].some(value => {
-              if (value === 'true') return isComplete;
-              if (value === 'false') return !isComplete;
-              return false;
-            });
-          }
-          
-          // Special filter: country
-          if (filterKey === 'country') {
-            let contactCountry = '';
-            if (contact.location) {
-              if (typeof contact.location === 'object' && contact.location.country) {
-                contactCountry = contact.location.country;
-              } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-                contactCountry = contact.location.split(',').pop().trim();
-              }
-            }
-            return activeFilters[filterKey].includes(contactCountry);
-          }
-          
-          // Checkbox fields
-          const field = getAllFields().find(f => f.id === filterKey);
-          if (field && field.type === 'checkbox') {
-            const contactValue = contact[filterKey] ? 'true' : 'false';
-            return activeFilters[filterKey].includes(contactValue);
-          }
-          
-          // Radio/Select fields with index values
-          if (field && (field.type === 'radio' || field.type === 'select')) {
-            const contactValue = contact[filterKey];
-            if (typeof contactValue === 'number') {
-              return activeFilters[filterKey].includes(contactValue.toString());
-            }
-          }
-          
-          // Regular filters
-          return activeFilters[filterKey].includes(contact[filterKey]);
-        });
-      }
-    });
-
-    return filtered;
-  }, [contacts, activeFilters, getAllFields]);
-
   // Calculate stats
   const stats = useMemo(() => {
-    const total = filteredContacts.length;
-    const complete = filteredContacts.filter(isContactComplete).length;
+    const total = contacts.length;
+    const complete = contacts.filter(isContactComplete).length;
     const incomplete = total - complete;
 
     return { total, complete, incomplete };
-  }, [filteredContacts, allFields]);
+  }, [contacts, allFields]);
 
-  // Get distribution for a field (using filtered contacts)
+  // Normalize country name
+  const normalizeCountry = (country) => {
+    const mapping = {
+      'germany': 'Allemagne',
+      'united states': 'États-Unis',
+      'united states of america': 'États-Unis',
+      'etats-unis d\'amerique': 'États-Unis',
+      'usa': 'États-Unis',
+      'uk': 'Royaume-Uni',
+      'united kingdom': 'Royaume-Uni',
+      'spain': 'Espagne',
+      'italy': 'Italie',
+      'france': 'France'
+    };
+    
+    const lower = country.toLowerCase().trim();
+    return mapping[lower] || country;
+  };
+
+  // Get distribution for a field (excluding undefined/null/empty)
   const getFieldDistribution = (fieldId) => {
+    // Special case for country
+    if (fieldId === 'country') {
+      const distribution = {};
+      let totalDefined = 0;
+
+      contacts.forEach(contact => {
+        let country = '';
+        if (contact.location) {
+          if (typeof contact.location === 'object' && contact.location.country) {
+            country = contact.location.country;
+          } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+            country = contact.location.split(',').pop().trim();
+          }
+        }
+        
+        if (country) {
+          const normalized = normalizeCountry(country);
+          distribution[normalized] = (distribution[normalized] || 0) + 1;
+          totalDefined++;
+        }
+      });
+
+      const data = Object.entries(distribution).map(([label, count]) => ({
+        label,
+        count,
+        percentage: totalDefined > 0 ? ((count / totalDefined) * 100).toFixed(1) : 0
+      }));
+
+      data.sort((a, b) => b.count - a.count);
+
+      return { data, totalDefined };
+    }
+
+    // Regular field
     const field = allFields.find(f => f.id === fieldId);
     if (!field) return { data: [], totalDefined: 0 };
 
     const distribution = {};
     let totalDefined = 0;
 
-    filteredContacts.forEach(contact => {
+    contacts.forEach(contact => {
       const value = contact[fieldId];
       if (value !== undefined && value !== null && value !== '') {
         const displayValue = getFieldDisplayValue(field, value);
@@ -230,7 +226,15 @@ const StatsPage = () => {
   const handleLegendClick = (displayLabel) => {
     if (!activeField) return;
 
-    const matchingContact = filteredContacts.find(contact => {
+    // Special case for country - navigate with country filter
+    if (activeField.id === 'country') {
+      const filters = { country: [displayLabel] };
+      navigate('/app/contacts', { state: { filters } });
+      return;
+    }
+
+    // Find the original value (index or string) that matches this display label
+    const matchingContact = contacts.find(contact => {
       const value = contact[activeField.id];
       if (value === undefined || value === null || value === '') return false;
       return getFieldDisplayValue(activeField, value) === displayLabel;
@@ -248,14 +252,6 @@ const StatsPage = () => {
       <div className="stats-header">
         <h1>📊 Statistiques</h1>
         <p className="stats-subtitle">Visualisez vos données de contacts</p>
-      </div>
-
-      {/* FilterBar */}
-      <div className="stats-filters">
-        <FilterBar
-          activeFilters={activeFilters}
-          onFilterChange={setActiveFilters}
-        />
       </div>
 
       <div className="stats-summary">
