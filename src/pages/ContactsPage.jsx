@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { cityAutocomplete } from '../utils/cityAutocomplete';
 import ContactCard from '../components/ContactCard';
+import ContactViewModal from '../components/ContactViewModal';
 import ContactModal from '../components/ContactModal';
 import FilterBar from '../components/FilterBar';
 import EmptyState from '../components/EmptyState';
@@ -14,8 +15,9 @@ const ContactsPage = () => {
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [editingContact, setEditingContact] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const letterRefs = useRef({});
   const headerRef = useRef(null);
@@ -84,7 +86,6 @@ const ContactsPage = () => {
             });
           }
           
-          // Special filter: country (par countryCode)
           if (filterKey === 'country') {
             let contactCountryCode = '';
             
@@ -160,24 +161,34 @@ const ContactsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEditContact = (contact) => {
-    setEditingContact(contact);
-    setShowModal(true);
+  const handleViewContact = async (contact) => {
+    // Remove "Nouveau" badge when viewing
+    if (contact.isNew) {
+      await updateContact(contact.id, { ...contact, isNew: false });
+    }
+    setSelectedContact(contact);
+    setShowViewModal(true);
+  };
+
+  const handleEditFromView = () => {
+    setShowViewModal(false);
+    setShowEditModal(true);
   };
 
   const handleSaveContact = async (updatedData) => {
     try {
-      await updateContact(editingContact.id, updatedData);
-      handleCloseModal();
+      await updateContact(selectedContact.id, updatedData);
+      handleCloseModals();
     } catch (error) {
       console.error('Error saving contact:', error);
       alert('Erreur lors de la sauvegarde du contact');
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingContact(null);
+  const handleCloseModals = () => {
+    setShowViewModal(false);
+    setShowEditModal(false);
+    setSelectedContact(null);
   };
 
   return (
@@ -253,7 +264,7 @@ const ContactsPage = () => {
                     <ContactCard
                       key={contact.id}
                       contact={contact}
-                      onEdit={() => handleEditContact(contact)}
+                      onEdit={() => handleViewContact(contact)}
                     />
                   ))}
                 </div>
@@ -273,10 +284,18 @@ const ContactsPage = () => {
         </button>
       )}
 
-      {showModal && (
+      {showViewModal && (
+        <ContactViewModal
+          contact={selectedContact}
+          onClose={handleCloseModals}
+          onEdit={handleEditFromView}
+        />
+      )}
+
+      {showEditModal && (
         <ContactModal
-          contact={editingContact}
-          onClose={handleCloseModal}
+          contact={selectedContact}
+          onClose={handleCloseModals}
           onSave={handleSaveContact}
         />
       )}
