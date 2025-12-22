@@ -245,17 +245,32 @@ const AnalysePage = () => {
       console.log(`⏳ ${pendingRequests.length} pending requests`);
 
       // ÉTAPE 1 : VÉRIFIER les contacts à supprimer (SANS LES SUPPRIMER)
-      setProgress('Vérification des contacts existants...');
+setProgress('Vérification des contacts existants...');
+
+const contactsToDelete = [];
+const followingLower = following.map(f => f.toLowerCase());
+const followersLower = followers.map(f => f.toLowerCase());
+
+for (const contact of contacts) {
+  const instagramUsername = (contact.instagram || '').toLowerCase().replace('@', '');
+  
+  if (instagramUsername) {
+    // Le contact doit être à la fois dans followers ET dans following (mutual)
+    const isInFollowers = followersLower.includes(instagramUsername);
+    const isInFollowing = followingLower.includes(instagramUsername);
+    
+    // Si le contact n'est PAS dans les deux listes, on le supprime
+    if (!isInFollowers || !isInFollowing) {
+      contactsToDelete.push(contact);
       
-      const contactsToDelete = [];
-      const followerUsernamesLower = followers.map(f => f.toLowerCase());
-      
-      for (const contact of contacts) {
-        const instagramUsername = (contact.instagram || '').toLowerCase().replace('@', '');
-        if (instagramUsername && !followerUsernamesLower.includes(instagramUsername)) {
-          contactsToDelete.push(contact);
-        }
-      }
+      console.log(`❌ Contact à supprimer: ${contact.firstName} (@${instagramUsername})`);
+      console.log(`   - Dans followers: ${isInFollowers}`);
+      console.log(`   - Dans following: ${isInFollowing}`);
+    }
+  }
+}
+
+console.log(`📊 Total contacts à supprimer: ${contactsToDelete.length}`);
       
       // ÉTAPE 2 : Si des suppressions sont détectées, demander confirmation AVANT toute modification
       if (contactsToDelete.length > 0) {
