@@ -111,27 +111,30 @@
   padding: 24px 32px;
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: flex-end;
+  justify-content: stretch;
 }
 
 .btn-edit {
-  padding: 14px 28px;
+  width: 100%;
+  padding: 16px 28px;
   border-radius: 12px;
   border: none;
   background: #DAA520;
   color: white;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .btn-edit:hover {
   background: #B8860B;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(218, 165, 32, 0.4);
 }
 
 /* Responsive */
