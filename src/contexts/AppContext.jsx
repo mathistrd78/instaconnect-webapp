@@ -69,14 +69,6 @@ const DEFAULT_FIELDS = [
     options: ['Homme', 'Femme', 'Autre']
   },
   {
-    id: 'dejaPecho',
-    type: 'radio',
-    label: 'Déjà Pécho?',
-    required: false,
-    order: 6,
-    options: ['Oui', 'Non']
-  },
-  {
     id: 'location',
     type: 'text',
     label: 'Localisation',
