@@ -108,7 +108,22 @@ const ContactsPage = () => {
             return activeFilters[filterKey].includes(contactCountry);
           }
           
-          // Regular filters
+          // Checkbox fields (like "dejaPecho")
+          const field = getAllFields().find(f => f.id === filterKey);
+          if (field && field.type === 'checkbox') {
+            const contactValue = contact[filterKey] ? 'true' : 'false';
+            return activeFilters[filterKey].includes(contactValue);
+          }
+          
+          // Radio/Select fields with index values
+          if (field && (field.type === 'radio' || field.type === 'select')) {
+            const contactValue = contact[filterKey];
+            if (typeof contactValue === 'number') {
+              return activeFilters[filterKey].includes(contactValue.toString());
+            }
+          }
+          
+          // Regular filters (old string values)
           return activeFilters[filterKey].includes(contact[filterKey]);
         });
       }
