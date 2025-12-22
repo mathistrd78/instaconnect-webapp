@@ -6,6 +6,9 @@
   transition: all 0.2s ease;
   box-shadow: var(--shadow);
   border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
 }
 
 .contact-card:hover {
@@ -42,6 +45,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.contact-flag-inline {
+  margin-left: 6px;
+  font-size: 16px;
 }
 
 .badge-new {
@@ -100,6 +108,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
 }
 
 .contact-tag {
@@ -119,19 +128,6 @@
   font-weight: 600;
 }
 
-.contact-location {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.contact-notes {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-top: 4px;
-  font-style: italic;
-}
-
 /* Dark mode adjustments */
 body.dark-mode .contact-card {
   background: var(--surface);
@@ -140,9 +136,4 @@ body.dark-mode .contact-card {
 
 body.dark-mode .contact-card:hover {
   border-color: var(--primary-color);
-}
-
-.contact-flag-inline {
-  margin-left: 6px;
-  font-size: 16px;
 }
