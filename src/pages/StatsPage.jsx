@@ -122,15 +122,17 @@ const StatsPage = () => {
         }
       });
       
+      const totalDefined = Array.from(countryMap.values()).reduce((sum, c) => sum + c.count, 0);
+
       const data = Array.from(countryMap.values())
         .map(country => ({
           label: `${country.flag} ${country.name}`,
           count: country.count,
-          percentage: contacts.length > 0 ? ((country.count / contacts.length) * 100).toFixed(1) : 0
+          percentage: totalDefined > 0 ? ((country.count / totalDefined) * 100).toFixed(1) : 0
         }))
         .sort((a, b) => b.count - a.count);
 
-      return { data, totalDefined: data.reduce((sum, d) => sum + d.count, 0) };
+      return { data, totalDefined };
     }
 
     // Regular field
@@ -183,10 +185,10 @@ const StatsPage = () => {
       return data.map(item => {
         const label = item.label.toLowerCase();
         if (label.includes('oui') || label.includes('✅')) {
-          return '#4CAF50'; // Vert
+          return '#10b981'; // Vert ✅
         }
         if (label.includes('non') || label.includes('❌')) {
-          return '#F44336'; // Rouge
+          return '#ef4444'; // Rouge ❌
         }
         return '#9E9E9E'; // Gris par défaut
       });
