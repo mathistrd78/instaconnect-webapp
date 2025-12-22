@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
@@ -6,19 +7,22 @@ import { doc, setDoc } from 'firebase/firestore';
 import '../styles/Analyse.css';
 
 const AnalysePage = () => {
+  const navigate = useNavigate();
   const { contacts, addContact, deleteMultipleContacts } = useApp();
   const { currentUser } = useAuth();
   const [file, setFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState('');
   const [results, setResults] = useState(null);
+  const [deletedContacts, setDeletedContacts] = useState([]); // Store deleted contacts info
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.name.endsWith('.zip')) {
       setFile(selectedFile);
-      setResults(null); // Reset results when new file is selected
+      setResults(null);
+      setDeletedContacts([]);
     } else {
       alert('Veuillez sélectionner un fichier ZIP');
     }
@@ -41,9 +45,74 @@ const AnalysePage = () => {
     if (droppedFile && droppedFile.name.endsWith('.zip')) {
       setFile(droppedFile);
       setResults(null);
+      setDeletedContacts([]);
     } else {
       alert('Veuillez déposer un fichier ZIP');
     }
+  };
+
+  const handleResultClick = (type) => {
+    switch(type) {
+      case 'created':
+        // Redirect to contacts page with "new" filter
+        navigate('/app/contacts', { 
+          state: { 
+            showNewContacts: true,
+            createdAfter: new Date().toISOString()
+          }
+        });
+        break;
+      case 'deleted':
+        // Show deleted contacts list in modal
+        if (deletedContacts.length > 0) {
+          showDeletedContactsModal();
+        }
+        break;
+      case 'unfollowers':
+        navigate('/app/unfollowers');
+        break;
+      case 'fans':
+        navigate('/app/fans');
+        break;
+      case 'pending':
+        navigate('/app/demandes');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const showDeletedContactsModal = () => {
+    const overlay = document.createElement('div');
+    overlay.id = 'deletedContactsModal';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    
+    const sortedDeleted = [...deletedContacts].sort((a, b) => a.localeCompare(b));
+    
+    overlay.innerHTML = `
+      <div class="modal-content-deleted" style="background: var(--surface); border-radius: 16px; max-width: 500px; width: 100%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-header-deleted" style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 18px; color: var(--text-primary);">Contacts supprimés (${deletedContacts.length})</h3>
+            <button onclick="document.getElementById('deletedContactsModal').remove()" class="modal-close-btn" style="background: var(--border-color); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; color: var(--text-primary);">✕</button>
+          </div>
+        </div>
+        <div class="modal-list-content" style="padding: 16px; overflow-y: auto; flex: 1;">
+          ${sortedDeleted.map(username => `
+            <div style="padding: 12px; background: var(--background); border-radius: 8px; margin-bottom: 8px; color: var(--text-primary);">
+              ${username}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('deletedContactsModal')?.remove();
+    document.body.appendChild(overlay);
+    
+    overlay.onclick = (e) => {
+      if (e.target === overlay) overlay.remove();
+    };
   };
 
   const analyzeFile = async () => {
@@ -179,11 +248,15 @@ const AnalysePage = () => {
       
       setProgress('Suppression des contacts...');
       
-      // Supprimer les contacts
+      // Supprimer les contacts et stocker la liste
       let deletedCount = 0;
+      const deletedUsernames = [];
       
       if (contactsToDelete.length > 0) {
         console.log(`🗑️ User confirmed - Deleting ${contactsToDelete.length} contact(s)...`);
+        
+        // Store deleted usernames for modal
+        deletedUsernames.push(...contactsToDelete.map(c => c.instagram || c.firstName));
         
         const contactIdsToDelete = contactsToDelete.map(c => c.id);
         await deleteMultipleContacts(contactIdsToDelete);
@@ -250,6 +323,9 @@ const AnalysePage = () => {
         
         console.log('✅ Instagram data saved to Firebase');
       }
+
+      // Store deleted contacts for modal
+      setDeletedContacts(deletedUsernames);
 
       // Show results
       setResults({
@@ -336,26 +412,46 @@ const AnalysePage = () => {
             <h3>✅ Analyse terminée !</h3>
             <div className="results-grid">
               {results.created > 0 && (
-                <div className="result-card success">
+                <div 
+                  className="result-card success clickable" 
+                  onClick={() => handleResultClick('created')}
+                  title="Cliquez pour voir les nouveaux contacts"
+                >
                   <div className="result-label">Contacts créés</div>
                   <div className="result-value">{results.created}</div>
                 </div>
               )}
               {results.deleted > 0 && (
-                <div className="result-card danger">
+                <div 
+                  className="result-card danger clickable" 
+                  onClick={() => handleResultClick('deleted')}
+                  title="Cliquez pour voir la liste"
+                >
                   <div className="result-label">Contacts supprimés</div>
                   <div className="result-value">{results.deleted}</div>
                 </div>
               )}
-              <div className="result-card">
+              <div 
+                className="result-card clickable" 
+                onClick={() => handleResultClick('unfollowers')}
+                title="Cliquez pour voir les unfollowers"
+              >
                 <div className="result-label">Unfollowers</div>
                 <div className="result-value">{results.unfollowers}</div>
               </div>
-              <div className="result-card">
+              <div 
+                className="result-card clickable" 
+                onClick={() => handleResultClick('fans')}
+                title="Cliquez pour voir les fans"
+              >
                 <div className="result-label">Fans</div>
                 <div className="result-value">{results.fans}</div>
               </div>
-              <div className="result-card">
+              <div 
+                className="result-card clickable" 
+                onClick={() => handleResultClick('pending')}
+                title="Cliquez pour voir les demandes"
+              >
                 <div className="result-label">Demandes en attente</div>
                 <div className="result-value">{results.pendingRequests}</div>
               </div>
