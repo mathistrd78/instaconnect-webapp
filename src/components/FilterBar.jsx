@@ -7,7 +7,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -19,14 +18,20 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get all fields that can be filtered
   const filterFields = [
     ...defaultFields.filter(f => f.type === 'select' || f.type === 'radio'),
     ...customFields.filter(f => f.type === 'select' || f.type === 'radio')
   ];
 
-  // Add special filters
   const specialFilters = [
+    {
+      id: 'isNew',
+      label: 'Nouveaux',
+      type: 'boolean',
+      options: [
+        { value: 'true', label: '✨ Nouveaux' }
+      ]
+    },
     {
       id: 'isFavorite',
       label: 'Favoris',
@@ -48,11 +53,10 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'country',
       label: 'Pays',
       type: 'dynamic',
-      options: [] // Will be populated dynamically
+      options: []
     }
   ];
 
-  // Get unique countries from contacts
   const getCountryOptions = () => {
     const countries = new Set();
     contacts.forEach(contact => {
@@ -72,8 +76,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   };
 
   const getFieldOptions = (field) => {
-    // Special filters
-    if (field.id === 'isFavorite' || field.id === 'isComplete') {
+    if (field.id === 'isNew' || field.id === 'isFavorite' || field.id === 'isComplete') {
       return field.options;
     }
     
@@ -81,7 +84,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       return getCountryOptions();
     }
 
-    // Radio fields use 'options' instead of 'tags'
     if (field.type === 'radio' && field.options) {
       return field.options.map(opt => ({
         value: opt,
@@ -89,11 +91,9 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       }));
     }
 
-    // Select fields with tags
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
     
-    // Remove duplicates based on value
     const uniqueTags = [];
     const seenValues = new Set();
     
@@ -119,7 +119,6 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       [fieldId]: newFilters.length > 0 ? newFilters : undefined
     };
     
-    // Remove undefined values
     Object.keys(updatedFilters).forEach(key => {
       if (updatedFilters[key] === undefined) {
         delete updatedFilters[key];
@@ -136,7 +135,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
   const hasActiveFilters = Object.values(activeFilters).some(f => f && f.length > 0);
 
-  const allFilters = [...filterFields, ...specialFilters];
+  const allFilters = [...specialFilters, ...filterFields];
 
   return (
     <div className="filter-bar" ref={dropdownRef}>
