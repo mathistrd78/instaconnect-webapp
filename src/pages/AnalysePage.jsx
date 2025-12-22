@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import '../styles/Analyse.css';
 
 const AnalysePage = () => {
@@ -185,8 +185,41 @@ const AnalysePage = () => {
       const followingSet = new Set(following.map(u => u.toLowerCase()));
       const followersSet = new Set(followers.map(u => u.toLowerCase()));
 
-      // Calculate stats
-      const unfollowers = following.filter(u => !followersSet.has(u.toLowerCase()));
+      // Load normalUnfollowers and doNotFollowList from Firebase
+      let normalUnfollowers = [];
+      let doNotFollowList = [];
+
+      if (currentUser) {
+        try {
+          const userId = currentUser.uid;
+          const userDocRef = doc(db, 'users', userId);
+          const userDocSnapshot = await getDoc(userDocRef);
+          
+          if (userDocSnapshot.exists()) {
+            const userData = userDocSnapshot.data();
+            normalUnfollowers = userData.normalUnfollowers || [];
+            doNotFollowList = userData.doNotFollowList || [];
+            
+            console.log(`📋 Loaded ${normalUnfollowers.length} normal unfollowers`);
+            console.log(`🚫 Loaded ${doNotFollowList.length} do not follow`);
+          }
+        } catch (error) {
+          console.error('Error loading unfollowers lists:', error);
+        }
+      }
+
+      // Create sets for filtering
+      const normalUnfollowersSet = new Set(normalUnfollowers.map(u => u.toLowerCase()));
+      const doNotFollowSet = new Set(doNotFollowList.map(u => u.toLowerCase()));
+
+      // Calculate stats - FILTER OUT normal unfollowers and do not follow list
+      const unfollowers = following.filter(u => {
+        const lowerU = u.toLowerCase();
+        return !followersSet.has(lowerU) && 
+               !normalUnfollowersSet.has(lowerU) && 
+               !doNotFollowSet.has(lowerU);
+      });
+
       const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
       const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
 
@@ -200,7 +233,7 @@ const AnalysePage = () => {
       }
 
       console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
-      console.log(`💔 ${unfollowers.length} unfollowers`);
+      console.log(`💔 ${unfollowers.length} unfollowers (filtered)`);
       console.log(`🫶 ${fans.length} fans`);
       console.log(`⏳ ${pendingRequests.length} pending requests`);
 
