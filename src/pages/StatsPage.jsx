@@ -299,11 +299,9 @@ const StatsPage = () => {
     if (!activeField) return;
 
     if (activeField.id === 'country') {
-      // Extraire le code pays du label "🇫🇷 France"
       const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
       
       if (countryCode) {
-        // Trouver le code pays original
         let foundCode = '';
         contacts.forEach(contact => {
           if (contact.location) {
@@ -349,6 +347,17 @@ const StatsPage = () => {
     }
   };
 
+  // Navigation depuis les cards de stats
+  const handleStatCardClick = (type) => {
+    if (type === 'total') {
+      navigate('/app/contacts');
+    } else if (type === 'complete') {
+      navigate('/app/contacts', { state: { filters: { isComplete: ['true'] } } });
+    } else if (type === 'incomplete') {
+      navigate('/app/contacts', { state: { filters: { isComplete: ['false'] } } });
+    }
+  };
+
   return (
     <div className="stats-page">
       <div className="stats-header">
@@ -357,19 +366,19 @@ const StatsPage = () => {
       </div>
 
       <div className="stats-summary">
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => handleStatCardClick('total')}>
           <div className="stat-info">
             <div className="stat-value">{stats.total}</div>
             <div className="stat-label">Total contacts</div>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => handleStatCardClick('complete')}>
           <div className="stat-info">
             <div className="stat-value">{stats.complete}</div>
             <div className="stat-label">Profils complets</div>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => handleStatCardClick('incomplete')}>
           <div className="stat-info">
             <div className="stat-value">{stats.incomplete}</div>
             <div className="stat-label">Profils incomplets</div>
@@ -428,7 +437,10 @@ const StatsPage = () => {
                         d={createArc(segment.startAngle, segment.endAngle)}
                         fill={segment.color}
                         className="pie-segment"
-                      />
+                        onClick={() => handleLegendClick(segment.label)}
+                      >
+                        <title>{segment.label} - {segment.count} ({segment.percentage}%)</title>
+                      </path>
                     ))}
                     <circle cx="120" cy="120" r="60" fill="var(--surface)" />
                     <text
