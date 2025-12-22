@@ -1,0 +1,66 @@
+.city-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.city-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.city-dropdown-header {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--background);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.city-dropdown-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  color: var(--text-primary);
+}
+
+.city-dropdown-item:hover {
+  background: var(--border-color);
+}
+
+.city-dropdown-item.loading,
+.city-dropdown-item.no-results {
+  color: var(--text-secondary);
+  cursor: default;
+  justify-content: center;
+}
+
+.city-dropdown-item.loading:hover,
+.city-dropdown-item.no-results:hover {
+  background: transparent;
+}
+
+.city-flag {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.city-name {
+  flex: 1;
+  font-size: 14px;
+}
