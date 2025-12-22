@@ -19,10 +19,17 @@ const ContactsPage = () => {
   const letterRefs = useRef({});
   const headerRef = useRef(null);
 
-  // Apply filters from navigation state (from StatsPage)
+  // Apply filters from navigation state (from StatsPage or AnalysePage)
   useEffect(() => {
     if (location.state?.filters) {
       setActiveFilters(location.state.filters);
+      // Clear navigation state
+      window.history.replaceState({}, document.title);
+    }
+    
+    // Detect if we need to apply "Nouveaux" filter from AnalysePage
+    if (location.state?.applyNewFilter) {
+      setActiveFilters({ isNew: ['true'] });
       // Clear navigation state
       window.history.replaceState({}, document.title);
     }
@@ -68,6 +75,11 @@ const ContactsPage = () => {
     Object.keys(activeFilters).forEach(filterKey => {
       if (activeFilters[filterKey] && activeFilters[filterKey].length > 0) {
         filtered = filtered.filter(contact => {
+          // Special filter: isNew
+          if (filterKey === 'isNew') {
+            return contact.isNew === true;
+          }
+          
           // Special filter: isFavorite
           if (filterKey === 'isFavorite') {
             return contact.isFavorite === true;
