@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../contexts/AppContext';
+import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/ContactCard.css';
 
 const ContactCard = ({ contact, onEdit }) => {
@@ -64,6 +65,17 @@ const ContactCard = ({ contact, onEdit }) => {
     return null;
   };
 
+  // Get country flag from location
+  const getCountryFlag = () => {
+    if (!contact.location) return null;
+    
+    if (typeof contact.location === 'object' && contact.location.countryCode) {
+      return cityAutocomplete.getFlag(contact.location.countryCode);
+    }
+    
+    return null;
+  };
+
   const toggleFavorite = async (e) => {
     e.stopPropagation();
     await updateContact(contact.id, {
@@ -107,12 +119,17 @@ const ContactCard = ({ contact, onEdit }) => {
     onEdit();
   };
 
+  const countryFlag = getCountryFlag();
+
   return (
     <div className="contact-card" onClick={handleEdit}>
       <div className="contact-card-header">
         <div className="contact-info">
           <div className="contact-name-row">
-            <span className="contact-name">{contact.firstName || 'Sans nom'}</span>
+            <span className="contact-name">
+              {contact.firstName || 'Sans nom'}
+              {countryFlag && <span className="contact-flag-inline"> {countryFlag}</span>}
+            </span>
             {contact.isNew && <span className="badge-new">✨ Nouveau</span>}
           </div>
           {contact.instagram && (
