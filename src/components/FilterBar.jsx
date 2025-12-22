@@ -18,16 +18,19 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Get all fields that can be filtered (select, radio, checkbox)
   const filterFields = [
-    ...defaultFields.filter(f => f.type === 'select' || f.type === 'radio'),
-    ...customFields.filter(f => f.type === 'select' || f.type === 'radio')
+    ...defaultFields.filter(f => f.type === 'select' || f.type === 'radio' || f.type === 'checkbox'),
+    ...customFields.filter(f => f.type === 'select' || f.type === 'radio' || f.type === 'checkbox')
   ];
 
+  // Add special filters IN ORDER
   const specialFilters = [
     {
       id: 'isNew',
       label: 'Nouveaux',
       type: 'boolean',
+      order: -3, // First
       options: [
         { value: 'true', label: '✨ Nouveaux' }
       ]
@@ -36,6 +39,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'isFavorite',
       label: 'Favoris',
       type: 'boolean',
+      order: -2, // Second
       options: [
         { value: 'true', label: '⭐ Favoris' }
       ]
@@ -44,6 +48,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'isComplete',
       label: 'Profil complet',
       type: 'boolean',
+      order: -1, // Third
       options: [
         { value: 'true', label: '✅ Complet' },
         { value: 'false', label: '⚠️ Incomplet' }
@@ -53,6 +58,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       id: 'country',
       label: 'Pays',
       type: 'dynamic',
+      order: 1000, // Last
       options: []
     }
   ];
@@ -76,6 +82,7 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   };
 
   const getFieldOptions = (field) => {
+    // Special filters
     if (field.id === 'isNew' || field.id === 'isFavorite' || field.id === 'isComplete') {
       return field.options;
     }
@@ -84,24 +91,38 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
       return getCountryOptions();
     }
 
+    // Checkbox fields
+    if (field.type === 'checkbox') {
+      return [
+        { value: 'true', label: 'Oui' },
+        { value: 'false', label: 'Non' }
+      ];
+    }
+
+    // Radio fields use 'options' instead of 'tags'
     if (field.type === 'radio' && field.options) {
-      return field.options.map(opt => ({
-        value: opt,
+      return field.options.map((opt, index) => ({
+        value: index.toString(), // Use index as value for consistency
         label: opt
       }));
     }
 
+    // Select fields with tags
     const customFieldTags = customTags[field.id] || [];
     const allTags = [...(field.tags || []), ...customFieldTags];
     
+    // Remove duplicates based on value
     const uniqueTags = [];
     const seenValues = new Set();
     
-    allTags.forEach(tag => {
-      const value = tag.value || tag;
+    allTags.forEach((tag, index) => {
+      const value = typeof tag === 'object' ? (tag.value || index.toString()) : tag;
       if (!seenValues.has(value)) {
         seenValues.add(value);
-        uniqueTags.push(tag);
+        uniqueTags.push({
+          value: index.toString(), // Use index as value
+          label: typeof tag === 'object' ? (tag.label || tag.value || tag) : tag
+        });
       }
     });
     
@@ -135,7 +156,11 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
 
   const hasActiveFilters = Object.values(activeFilters).some(f => f && f.length > 0);
 
-  const allFilters = [...specialFilters, ...filterFields];
+  // Combine and sort all filters by order
+  const allFilters = [
+    ...specialFilters,
+    ...filterFields.map(f => ({ ...f, order: f.order !== undefined ? f.order : 500 }))
+  ].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <div className="filter-bar" ref={dropdownRef}>
