@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import '../styles/ContactModal.css';
 
 const ContactModal = ({ contact, onClose, onSave }) => {
   const { getAllFields } = useApp();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({});
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -95,7 +97,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
 
     switch (field.type) {
       case 'text':
-        // Special handling for location field
         const displayValue = getDisplayValue(field);
         
         return (
@@ -124,30 +125,57 @@ const ContactModal = ({ contact, onClose, onSave }) => {
         );
 
       case 'select':
-        // Get current value (handle both old string values and new index values)
         const currentSelectValue = typeof formData[field.id] === 'number' 
           ? formData[field.id] 
           : (field.tags ? field.tags.findIndex(tag => (tag.value || tag) === formData[field.id]) : -1);
 
+        // Check if tags are empty
+        const hasTags = field.tags && field.tags.length > 0;
+
         return (
-          <select
-            id={field.id}
-            className="form-input"
-            value={currentSelectValue >= 0 ? currentSelectValue : ''}
-            onChange={(e) => handleChange(field.id, e.target.value === '' ? '' : parseInt(e.target.value))}
-            required={field.required}
-          >
-            <option value="">Sélectionner</option>
-            {field.tags && field.tags.map((tag, index) => (
-              <option key={index} value={index}>
-                {tag.label || tag}
-              </option>
-            ))}
-          </select>
+          <>
+            {!hasTags && (
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(255, 193, 7, 0.1)', 
+                borderRadius: '8px', 
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: '#f0ad4e'
+              }}>
+                ⚠️ Aucun tag disponible. 
+                <span 
+                  onClick={() => navigate('/app/tags')}
+                  style={{ 
+                    color: '#E1306C', 
+                    cursor: 'pointer', 
+                    textDecoration: 'underline',
+                    marginLeft: '4px'
+                  }}
+                >
+                  Créez vos tags sur la page Profil
+                </span>
+              </div>
+            )}
+            <select
+              id={field.id}
+              className="form-input"
+              value={currentSelectValue >= 0 ? currentSelectValue : ''}
+              onChange={(e) => handleChange(field.id, e.target.value === '' ? '' : parseInt(e.target.value))}
+              required={field.required}
+              disabled={!hasTags}
+            >
+              <option value="">Sélectionner</option>
+              {field.tags && field.tags.map((tag, index) => (
+                <option key={index} value={index}>
+                  {tag.label || tag}
+                </option>
+              ))}
+            </select>
+          </>
         );
 
       case 'radio':
-        // Get current value (handle both old string values and new index values)
         const currentRadioValue = typeof formData[field.id] === 'number' 
           ? formData[field.id] 
           : (field.options ? field.options.findIndex(opt => opt === formData[field.id]) : -1);
@@ -155,14 +183,20 @@ const ContactModal = ({ contact, onClose, onSave }) => {
         return (
           <div className="radio-group">
             {field.options && field.options.map((option, index) => (
-              <label key={index} className="radio-label">
+              <label 
+                key={index} 
+                className="radio-label"
+                onClick={() => handleChange(field.id, index)}
+                style={{ cursor: 'pointer' }}
+              >
                 <input
                   type="radio"
                   name={field.id}
                   value={index}
                   checked={currentRadioValue === index}
-                  onChange={(e) => handleChange(field.id, parseInt(e.target.value))}
+                  onChange={() => {}}
                   required={field.required}
+                  style={{ pointerEvents: 'none' }}
                 />
                 <span>{option}</span>
               </label>
@@ -222,7 +256,6 @@ const ContactModal = ({ contact, onClose, onSave }) => {
             </div>
           );
         } else {
-          // Pour tous les autres champs date (nextMeeting, etc.) - Date picker natif
           return (
             <input
               type="date"
