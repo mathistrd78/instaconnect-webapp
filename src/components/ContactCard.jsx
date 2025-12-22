@@ -13,7 +13,6 @@ const ContactCard = ({ contact, onEdit }) => {
       return null;
     }
 
-    // Si le champ est select et que la valeur est un nombre (index)
     if (field.type === 'select' && typeof value === 'number') {
       if (field.tags && field.tags[value]) {
         return field.tags[value].label || field.tags[value].value || field.tags[value];
@@ -21,7 +20,6 @@ const ContactCard = ({ contact, onEdit }) => {
       return null;
     }
     
-    // Si le champ est radio et que la valeur est un nombre (index)
     if (field.type === 'radio' && typeof value === 'number') {
       if (field.options && field.options[value]) {
         return field.options[value];
@@ -29,31 +27,25 @@ const ContactCard = ({ contact, onEdit }) => {
       return null;
     }
     
-    // Pour les anciens contacts (valeur texte) avec select
     if (field.type === 'select' && typeof value === 'string') {
       const tag = field.tags?.find(t => (t.value || t) === value);
       return tag ? (tag.label || tag.value || tag) : value;
     }
 
-    // Pour les anciens contacts (valeur texte) avec radio
     if (field.type === 'radio' && typeof value === 'string') {
       return value;
     }
     
-    // Autres types de champs
     return value;
   };
 
-  // Get location display
   const getLocationDisplay = () => {
     if (!contact.location) return null;
     
-    // Si c'est un objet (ancien format)
     if (typeof contact.location === 'object' && contact.location !== null) {
       if (contact.location.displayName) {
         return contact.location.displayName;
       }
-      // Construire manuellement si displayName n'existe pas
       if (contact.location.city && contact.location.country) {
         return `${contact.location.city}, ${contact.location.country}`;
       }
@@ -65,7 +57,6 @@ const ContactCard = ({ contact, onEdit }) => {
       }
     }
     
-    // Si c'est une string (nouveau format)
     if (typeof contact.location === 'string') {
       return contact.location;
     }
@@ -81,23 +72,19 @@ const ContactCard = ({ contact, onEdit }) => {
     });
   };
 
-  // Get tag display with index support
   const getTagDisplay = (fieldId) => {
     const value = contact[fieldId];
     if (value === undefined || value === '' || value === null) return null;
 
-    // Find the field definition
     const field = allFields.find(f => f.id === fieldId);
     if (!field) return value;
 
-    // Use helper function for display value
     return getFieldDisplayValue(field, value);
   };
 
   const handleInstagramClick = (e) => {
     e.stopPropagation();
     if (contact.instagram) {
-      // Remove @ if present at the beginning
       const username = contact.instagram.startsWith('@') 
         ? contact.instagram.substring(1) 
         : contact.instagram;
@@ -105,7 +92,6 @@ const ContactCard = ({ contact, onEdit }) => {
     }
   };
 
-  // Format Instagram username (remove @ if present)
   const getInstagramDisplay = () => {
     if (!contact.instagram) return null;
     return contact.instagram.startsWith('@') 
@@ -113,11 +99,22 @@ const ContactCard = ({ contact, onEdit }) => {
       : `@${contact.instagram}`;
   };
 
+  // Retirer le badge "Nouveau" quand on clique pour éditer
+  const handleEdit = async () => {
+    if (contact.isNew) {
+      await updateContact(contact.id, { ...contact, isNew: false });
+    }
+    onEdit();
+  };
+
   return (
-    <div className="contact-card" onClick={onEdit}>
+    <div className="contact-card" onClick={handleEdit}>
       <div className="contact-card-header">
         <div className="contact-info">
-          <div className="contact-name">{contact.firstName || 'Sans nom'}</div>
+          <div className="contact-name-row">
+            <span className="contact-name">{contact.firstName || 'Sans nom'}</span>
+            {contact.isNew && <span className="badge-new">✨ Nouveau</span>}
+          </div>
           {contact.instagram && (
             <div 
               className="contact-instagram" 
