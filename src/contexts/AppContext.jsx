@@ -7,7 +7,8 @@ import {
   getDocs,
   setDoc,
   writeBatch,
-  getDoc
+  getDoc,
+  deleteDoc
 } from 'firebase/firestore';
 
 const AppContext = createContext();
@@ -263,7 +264,33 @@ export const AppProvider = ({ children }) => {
     
     if (currentUser) {
       const contactRef = doc(db, 'users', currentUser.uid, 'contacts', contactId);
-      await setDoc(contactRef, { deleted: true }, { merge: true });
+      await deleteDoc(contactRef);
+    }
+  };
+
+  // Delete multiple contacts (for batch operations)
+  const deleteMultipleContacts = async (contactIds) => {
+    if (!currentUser) return;
+
+    try {
+      const userId = currentUser.uid;
+      const batch = writeBatch(db);
+
+      contactIds.forEach(contactId => {
+        const contactRef = doc(db, 'users', userId, 'contacts', contactId);
+        batch.delete(contactRef);
+      });
+
+      await batch.commit();
+
+      // Update local state
+      const updatedContacts = contacts.filter(c => !contactIds.includes(c.id));
+      setContacts(updatedContacts);
+
+      console.log(`✅ Deleted ${contactIds.length} contacts`);
+    } catch (error) {
+      console.error('❌ Error deleting multiple contacts:', error);
+      throw error;
     }
   };
 
@@ -318,6 +345,7 @@ export const AppProvider = ({ children }) => {
     addContact,
     updateContact,
     deleteContact,
+    deleteMultipleContacts,
     defaultFields,
     setDefaultFields,
     customFields,
