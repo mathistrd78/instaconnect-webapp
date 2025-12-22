@@ -217,26 +217,58 @@ const StatsPage = () => {
   };
 
   const handleLegendClick = (displayLabel) => {
-    if (!activeField) return;
+  if (!activeField) return;
 
-    if (activeField.id === 'country') {
-      const filters = { country: [displayLabel] };
-      navigate('/app/contacts', { state: { filters } });
-      return;
+  if (activeField.id === 'country') {
+    // Extraire le code pays du label "🇫🇷 France"
+    const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
+    
+    if (countryCode) {
+      // Trouver le code pays original
+      let foundCode = '';
+      contacts.forEach(contact => {
+        if (contact.location) {
+          let code = '';
+          let name = '';
+          
+          if (typeof contact.location === 'object' && contact.location.countryCode) {
+            code = contact.location.countryCode;
+            name = cityAutocomplete.normalizeCountryName(contact.location.country, code);
+          } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+            const lastPart = contact.location.split(',').pop().trim();
+            code = cityAutocomplete.guessCountryCode(lastPart);
+            if (code) {
+              name = cityAutocomplete.normalizeCountryName(lastPart, code);
+            }
+          }
+          
+          const flag = cityAutocomplete.getFlag(code);
+          if (`${flag} ${name}` === displayLabel && !foundCode) {
+            foundCode = code;
+          }
+        }
+      });
+      
+      if (foundCode) {
+        const filters = { country: [foundCode] };
+        navigate('/app/contacts', { state: { filters } });
+      }
     }
+    return;
+  }
 
-    const matchingContact = contacts.find(contact => {
-      const value = contact[activeField.id];
-      if (value === undefined || value === null || value === '') return false;
-      return getFieldDisplayValue(activeField, value) === displayLabel;
-    });
+  const matchingContact = contacts.find(contact => {
+    const value = contact[activeField.id];
+    if (value === undefined || value === null || value === '') return false;
+    return getFieldDisplayValue(activeField, value) === displayLabel;
+  });
 
-    if (matchingContact) {
-      const originalValue = matchingContact[activeField.id];
-      const filters = { [activeField.id]: [originalValue] };
-      navigate('/app/contacts', { state: { filters } });
-    }
-  };
+  if (matchingContact) {
+    const originalValue = matchingContact[activeField.id];
+    const filters = { [activeField.id]: [originalValue] };
+    navigate('/app/contacts', { state: { filters } });
+  }
+};
 
   return (
     <div className="stats-page">
