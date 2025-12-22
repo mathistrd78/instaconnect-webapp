@@ -160,7 +160,81 @@ const StatsPage = () => {
     return { data, totalDefined };
   };
 
-  const colors = [
+  // Get colors for a specific field and its values
+  const getFieldColors = (fieldId, data) => {
+    const field = allFields.find(f => f.id === fieldId);
+    
+    // 1. Sexe (genre) - Bleu/Rose/Gris
+    if (fieldId === 'gender' || field?.label?.toLowerCase().includes('sexe')) {
+      return data.map(item => {
+        const label = item.label.toLowerCase();
+        if (label.includes('homme') || label.includes('masculin') || label.includes('male')) {
+          return '#2196F3'; // Bleu
+        }
+        if (label.includes('femme') || label.includes('féminin') || label.includes('female')) {
+          return '#E91E63'; // Rose
+        }
+        return '#9E9E9E'; // Gris (Autre)
+      });
+    }
+    
+    // 2. Champs radio/checkbox avec Oui/Non - Vert/Rouge
+    if (field && (field.type === 'radio' || field.type === 'checkbox')) {
+      return data.map(item => {
+        const label = item.label.toLowerCase();
+        if (label.includes('oui') || label.includes('✅')) {
+          return '#4CAF50'; // Vert
+        }
+        if (label.includes('non') || label.includes('❌')) {
+          return '#F44336'; // Rouge
+        }
+        return '#9E9E9E'; // Gris par défaut
+      });
+    }
+    
+    // 3. Champs select avec tags (utiliser les couleurs des tags)
+    if (field && field.type === 'select' && field.tags) {
+      return data.map(item => {
+        // Trouver l'index du tag correspondant au label
+        const tagIndex = field.tags.findIndex(tag => {
+          const tagLabel = typeof tag === 'object' ? (tag.label || tag.value || tag) : tag;
+          return tagLabel === item.label;
+        });
+        
+        if (tagIndex !== -1) {
+          const tag = field.tags[tagIndex];
+          // Si le tag a une couleur définie, l'utiliser
+          if (typeof tag === 'object' && tag.color) {
+            return tag.color;
+          }
+        }
+        
+        // Couleur par défaut si pas de couleur définie
+        return defaultColors[data.indexOf(item) % defaultColors.length];
+      });
+    }
+    
+    // 4. Pays - Utiliser une palette étendue pour éviter les doublons
+    if (fieldId === 'country') {
+      const extendedColors = [
+        '#E1306C', '#C13584', '#F77737', '#FCAF45', '#833AB4',
+        '#FD1D1D', '#405DE6', '#5B51D8', '#C32AA3', '#F56040',
+        '#2196F3', '#00BCD4', '#009688', '#4CAF50', '#8BC34A',
+        '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
+        '#795548', '#9E9E9E', '#607D8B', '#E91E63', '#9C27B0',
+        '#673AB7', '#3F51B5', '#03A9F4', '#00ACC1', '#00897B',
+        '#43A047', '#7CB342', '#C0CA33', '#FDD835', '#FFB300',
+        '#FB8C00', '#F4511E', '#6D4C41', '#757575', '#546E7A'
+      ];
+      return data.map((_, index) => extendedColors[index % extendedColors.length]);
+    }
+    
+    // 5. Par défaut - palette Instagram
+    return data.map((_, index) => defaultColors[index % defaultColors.length]);
+  };
+
+  // Palette par défaut (Instagram colors)
+  const defaultColors = [
     '#E1306C', '#C13584', '#F77737', '#FCAF45', '#833AB4',
     '#FD1D1D', '#405DE6', '#5B51D8', '#C32AA3', '#F56040'
   ];
@@ -169,6 +243,9 @@ const StatsPage = () => {
   const { data: chartData, totalDefined } = activeField 
     ? getFieldDistribution(activeField.id) 
     : { data: [], totalDefined: 0 };
+
+  // Obtenir les couleurs pour le champ actif
+  const colors = activeField ? getFieldColors(activeField.id, chartData) : defaultColors;
 
   const createPieChart = (data) => {
     if (data.length === 0) return [];
@@ -217,58 +294,58 @@ const StatsPage = () => {
   };
 
   const handleLegendClick = (displayLabel) => {
-  if (!activeField) return;
+    if (!activeField) return;
 
-  if (activeField.id === 'country') {
-    // Extraire le code pays du label "🇫🇷 France"
-    const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
-    
-    if (countryCode) {
-      // Trouver le code pays original
-      let foundCode = '';
-      contacts.forEach(contact => {
-        if (contact.location) {
-          let code = '';
-          let name = '';
-          
-          if (typeof contact.location === 'object' && contact.location.countryCode) {
-            code = contact.location.countryCode;
-            name = cityAutocomplete.normalizeCountryName(contact.location.country, code);
-          } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-            const lastPart = contact.location.split(',').pop().trim();
-            code = cityAutocomplete.guessCountryCode(lastPart);
-            if (code) {
-              name = cityAutocomplete.normalizeCountryName(lastPart, code);
+    if (activeField.id === 'country') {
+      // Extraire le code pays du label "🇫🇷 France"
+      const countryCode = Array.from(chartData).find(item => item.label === displayLabel);
+      
+      if (countryCode) {
+        // Trouver le code pays original
+        let foundCode = '';
+        contacts.forEach(contact => {
+          if (contact.location) {
+            let code = '';
+            let name = '';
+            
+            if (typeof contact.location === 'object' && contact.location.countryCode) {
+              code = contact.location.countryCode;
+              name = cityAutocomplete.normalizeCountryName(contact.location.country, code);
+            } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+              const lastPart = contact.location.split(',').pop().trim();
+              code = cityAutocomplete.guessCountryCode(lastPart);
+              if (code) {
+                name = cityAutocomplete.normalizeCountryName(lastPart, code);
+              }
+            }
+            
+            const flag = cityAutocomplete.getFlag(code);
+            if (`${flag} ${name}` === displayLabel && !foundCode) {
+              foundCode = code;
             }
           }
-          
-          const flag = cityAutocomplete.getFlag(code);
-          if (`${flag} ${name}` === displayLabel && !foundCode) {
-            foundCode = code;
-          }
+        });
+        
+        if (foundCode) {
+          const filters = { country: [foundCode] };
+          navigate('/app/contacts', { state: { filters } });
         }
-      });
-      
-      if (foundCode) {
-        const filters = { country: [foundCode] };
-        navigate('/app/contacts', { state: { filters } });
       }
+      return;
     }
-    return;
-  }
 
-  const matchingContact = contacts.find(contact => {
-    const value = contact[activeField.id];
-    if (value === undefined || value === null || value === '') return false;
-    return getFieldDisplayValue(activeField, value) === displayLabel;
-  });
+    const matchingContact = contacts.find(contact => {
+      const value = contact[activeField.id];
+      if (value === undefined || value === null || value === '') return false;
+      return getFieldDisplayValue(activeField, value) === displayLabel;
+    });
 
-  if (matchingContact) {
-    const originalValue = matchingContact[activeField.id];
-    const filters = { [activeField.id]: [originalValue] };
-    navigate('/app/contacts', { state: { filters } });
-  }
-};
+    if (matchingContact) {
+      const originalValue = matchingContact[activeField.id];
+      const filters = { [activeField.id]: [originalValue] };
+      navigate('/app/contacts', { state: { filters } });
+    }
+  };
 
   return (
     <div className="stats-page">
