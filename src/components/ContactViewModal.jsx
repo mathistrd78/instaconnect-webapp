@@ -141,7 +141,7 @@ const ContactViewModal = ({ contact, onClose, onEdit }) => {
 
         <div className="contact-view-footer">
           <button className="btn-edit" onClick={onEdit}>
-            ✏️ Modifier
+            Modifier ✏️
           </button>
         </div>
       </div>
