@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import '../styles/Analyse.css';
 
 const AnalysePage = () => {
-  const { addContact } = useApp();
+  const { contacts, addContact, deleteMultipleContacts } = useApp();
+  const { currentUser } = useAuth();
   const [file, setFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [progress, setProgress] = useState('');
   const [results, setResults] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -13,6 +18,7 @@ const AnalysePage = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.name.endsWith('.zip')) {
       setFile(selectedFile);
+      setResults(null); // Reset results when new file is selected
     } else {
       alert('Veuillez sélectionner un fichier ZIP');
     }
@@ -34,6 +40,7 @@ const AnalysePage = () => {
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile && droppedFile.name.endsWith('.zip')) {
       setFile(droppedFile);
+      setResults(null);
     } else {
       alert('Veuillez déposer un fichier ZIP');
     }
@@ -46,79 +53,221 @@ const AnalysePage = () => {
     }
 
     setAnalyzing(true);
+    setProgress('Extraction du fichier ZIP...');
     
     try {
+      // Load JSZip
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(file);
       
-      // Extract followers and following
+      setProgress('Lecture des fichiers...');
+
+      // Extract files
       let followersData = [];
       let followingData = [];
+      let pendingData = null;
       
-      const followersFile = zip.file(/followers_\d+\.json/)[0] || zip.file('followers_and_following/followers.json');
-      const followingFile = zip.file(/following\.json/)[0] || zip.file('followers_and_following/following.json');
+      // Find followers file
+      const followersFile = zip.file(/followers_\d+\.json/)[0] || 
+                           zip.file('followers_and_following/followers_1.json') ||
+                           zip.file('followers_and_following/followers.json');
       
-      if (followersFile) {
-        const content = await followersFile.async('text');
-        const parsed = JSON.parse(content);
-        followersData = parsed.relationships_followers || parsed;
+      // Find following file
+      const followingFile = zip.file(/following\.json/)[0] || 
+                           zip.file('followers_and_following/following.json');
+      
+      // Find pending requests file
+      const pendingFile = zip.file(/pending_follow_requests\.json/)[0] ||
+                         zip.file('followers_and_following/pending_follow_requests.json');
+      
+      if (!followersFile || !followingFile) {
+        throw new Error('Fichiers following.json ou followers_1.json introuvables dans le ZIP');
       }
+
+      // Parse followers
+      const followersContent = await followersFile.async('text');
+      const followersParsed = JSON.parse(followersContent);
+      followersData = followersParsed.relationships_followers || followersParsed || [];
       
-      if (followingFile) {
-        const content = await followingFile.async('text');
-        const parsed = JSON.parse(content);
-        followingData = parsed.relationships_following || parsed;
+      // Parse following
+      const followingContent = await followingFile.async('text');
+      const followingParsed = JSON.parse(followingContent);
+      followingData = followingParsed.relationships_following || followingParsed || [];
+      
+      // Parse pending requests if exists
+      if (pendingFile) {
+        const pendingContent = await pendingFile.async('text');
+        const pendingParsed = JSON.parse(pendingContent);
+        pendingData = pendingParsed;
       }
-      
+
+      setProgress('Analyse des followers...');
+
       // Extract usernames
       const followers = followersData.map(item => 
-        item.string_list_data?.[0]?.value || item.username || item
-      );
+        item.string_list_data?.[0]?.value || item.title || item.username || item
+      ).filter(Boolean);
+      
       const following = followingData.map(item =>
-        item.string_list_data?.[0]?.value || item.username || item
-      );
+        item.string_list_data?.[0]?.value || item.title || item.username || item
+      ).filter(Boolean);
+
+      // Create sets for faster lookup
+      const followingSet = new Set(following.map(u => u.toLowerCase()));
+      const followersSet = new Set(followers.map(u => u.toLowerCase()));
+
+      // Calculate stats
+      const unfollowers = following.filter(u => !followersSet.has(u.toLowerCase()));
+      const fans = followers.filter(f => !followingSet.has(f.toLowerCase()));
+      const mutualFollowers = following.filter(u => followersSet.has(u.toLowerCase()));
+
+      // Extract pending requests
+      let pendingRequests = [];
+      if (pendingData && pendingData.relationships_follow_requests_sent) {
+        pendingRequests = pendingData.relationships_follow_requests_sent
+          .flatMap(item => item.string_list_data || [])
+          .map(entry => entry.value)
+          .filter(Boolean);
+      }
+
+      console.log(`📊 Stats: ${followers.length} followers, ${following.length} following`);
+      console.log(`💔 ${unfollowers.length} unfollowers`);
+      console.log(`🫶 ${fans.length} fans`);
+      console.log(`⏳ ${pendingRequests.length} pending requests`);
+
+      // ÉTAPE 1 : VÉRIFIER les contacts à supprimer (SANS LES SUPPRIMER)
+      setProgress('Vérification des contacts existants...');
       
-      // Find mutual followers
-      const mutualFollowers = followers.filter(f => following.includes(f));
+      const contactsToDelete = [];
+      const followerUsernamesLower = followers.map(f => f.toLowerCase());
       
-      // Find unfollowers (you follow them but they don't follow you back)
-      const unfollowers = following.filter(f => !followers.includes(f));
-      
-      // Find fans (they follow you but you don't follow them back)
-      const fans = followers.filter(f => !following.includes(f));
-      
-      setResults({
-        totalFollowers: followers.length,
-        totalFollowing: following.length,
-        mutualFollowers: mutualFollowers.length,
-        unfollowers: unfollowers.length,
-        fans: fans.length,
-        mutualList: mutualFollowers
-      });
-      
-      // Auto-create contacts for mutual followers
-      let createdCount = 0;
-      for (const username of mutualFollowers) {
-        try {
-          await addContact({
-            instagram: username,
-            firstName: username,
-            createdAt: new Date().toISOString(),
-            relationType: 'Ami',
-            meetingPlace: 'Insta',
-            discussionStatus: 'Jamais parlé'
-          });
-          createdCount++;
-        } catch (error) {
-          console.log(`Contact ${username} déjà existant ou erreur`);
+      for (const contact of contacts) {
+        const instagramUsername = (contact.instagram || '').toLowerCase().replace('@', '');
+        if (instagramUsername && !followerUsernamesLower.includes(instagramUsername)) {
+          contactsToDelete.push(contact);
         }
       }
       
-      setResults(prev => ({...prev, createdContacts: createdCount}));
+      // ÉTAPE 2 : Si des suppressions sont détectées, demander confirmation AVANT toute modification
+      if (contactsToDelete.length > 0) {
+        console.log(`⚠️ ${contactsToDelete.length} contact(s) to delete - asking for confirmation BEFORE any modification...`);
+        
+        const confirmed = window.confirm(
+          `⚠️ ATTENTION\n\n` +
+          `${contactsToDelete.length} fiche(s) contact(s) vont être supprimées.\n\n` +
+          `Souhaitez-vous continuer ?\n\n` +
+          `Si ce nombre vous paraît incohérent, vérifiez que vous avez bien sélectionné "Depuis le début" lors de l'export Instagram.`
+        );
+        
+        if (!confirmed) {
+          // ANNULATION COMPLÈTE - Aucune modification effectuée
+          console.log('❌ Analysis cancelled by user - NO modifications made');
+          setAnalyzing(false);
+          setProgress('');
+          
+          alert(
+            `❌ Analyse annulée, aucune modification effectuée.\n\n` +
+            `Si le nombre de fiches contacts à supprimer vous paraît incohérent, ` +
+            `vérifiez que vous avez bien sélectionné "Depuis le début" lors de l'export Instagram.`
+          );
+          
+          return; // Arrêter l'analyse complètement
+        }
+      }
+      
+      // ÉTAPE 3 : L'utilisateur a confirmé (ou pas de suppressions), procéder aux modifications
+      
+      setProgress('Suppression des contacts...');
+      
+      // Supprimer les contacts
+      let deletedCount = 0;
+      
+      if (contactsToDelete.length > 0) {
+        console.log(`🗑️ User confirmed - Deleting ${contactsToDelete.length} contact(s)...`);
+        
+        const contactIdsToDelete = contactsToDelete.map(c => c.id);
+        await deleteMultipleContacts(contactIdsToDelete);
+        deletedCount = contactsToDelete.length;
+        
+        console.log(`✅ ${deletedCount} contact(s) deleted`);
+      }
+
+      setProgress('Création des fiches contacts...');
+
+      // Create contact cards for mutual followers
+      let created = 0;
+      let alreadyExists = 0;
+
+      for (const username of mutualFollowers) {
+        // Check if contact already exists (by Instagram username)
+        const existingContact = contacts.find(c => {
+          const contactUsername = (c.instagram || '').toLowerCase().replace('@', '');
+          return contactUsername === username.toLowerCase();
+        });
+
+        if (existingContact) {
+          alreadyExists++;
+          continue;
+        }
+
+        // Create new contact
+        const newContact = {
+          firstName: `@${username}`,
+          instagram: `@${username}`,
+          relationType: '',
+          meetingPlace: '',
+          discussionStatus: '',
+          gender: '',
+          location: '',
+          birthDate: '',
+          nextMeeting: '',
+          notes: ''
+        };
+
+        await addContact(newContact);
+        created++;
+        
+        // Update progress every 10 contacts
+        if (created % 10 === 0) {
+          setProgress(`Création des fiches contacts... (${created} créées)`);
+        }
+      }
+
+      setProgress('Sauvegarde des données Instagram...');
+
+      // Save Instagram data to Firebase
+      if (currentUser) {
+        const userId = currentUser.uid;
+        await setDoc(doc(db, 'users', userId), {
+          unfollowersData: {
+            following: following,
+            followers: followers,
+            unfollowers: unfollowers,
+            lastUpdate: new Date().toISOString()
+          },
+          pendingRequests: pendingRequests
+        }, { merge: true });
+        
+        console.log('✅ Instagram data saved to Firebase');
+      }
+
+      // Show results
+      setResults({
+        created,
+        deleted: deletedCount,
+        unfollowers: unfollowers.length,
+        fans: fans.length,
+        pendingRequests: pendingRequests.length,
+        totalFollowers: followers.length,
+        totalFollowing: following.length
+      });
+
+      setProgress('');
       
     } catch (error) {
-      console.error('Erreur analyse:', error);
-      alert('Erreur lors de l\'analyse du fichier. Vérifiez qu\'il s\'agit bien d\'un export Instagram.');
+      console.error('❌ Error analyzing file:', error);
+      alert('Erreur lors de l\'analyse du fichier. Vérifiez qu\'il s\'agit bien d\'un export Instagram complet.');
+      setProgress('');
     } finally {
       setAnalyzing(false);
     }
@@ -154,7 +303,7 @@ const AnalysePage = () => {
             <>
               <div className="upload-icon">✅</div>
               <div className="upload-text">{file.name}</div>
-              <div className="upload-subtext">Fichier sélectionné</div>
+              <div className="upload-subtext">Cliquez sur "Lancer l'analyse" ci-dessous</div>
             </>
           ) : (
             <>
@@ -174,38 +323,43 @@ const AnalysePage = () => {
           {analyzing ? '🔄 Analyse en cours...' : '🚀 Lancer l\'analyse complète'}
         </button>
 
+        {/* Progress */}
+        {analyzing && progress && (
+          <div className="analyse-progress">
+            <div className="progress-text">{progress}</div>
+          </div>
+        )}
+
         {/* Results */}
         {results && (
           <div className="analyse-results">
             <h3>✅ Analyse terminée !</h3>
-            <div className="results-stats">
-              <div className="stat-item">
-                <span className="stat-label">Followers</span>
-                <span className="stat-value">{results.totalFollowers}</span>
+            <div className="results-grid">
+              {results.created > 0 && (
+                <div className="result-card success">
+                  <div className="result-label">Contacts créés</div>
+                  <div className="result-value">{results.created}</div>
+                </div>
+              )}
+              {results.deleted > 0 && (
+                <div className="result-card danger">
+                  <div className="result-label">Contacts supprimés</div>
+                  <div className="result-value">{results.deleted}</div>
+                </div>
+              )}
+              <div className="result-card">
+                <div className="result-label">Unfollowers</div>
+                <div className="result-value">{results.unfollowers}</div>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Following</span>
-                <span className="stat-value">{results.totalFollowing}</span>
+              <div className="result-card">
+                <div className="result-label">Fans</div>
+                <div className="result-value">{results.fans}</div>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Mutuels</span>
-                <span className="stat-value">{results.mutualFollowers}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Unfollowers</span>
-                <span className="stat-value">{results.unfollowers}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Fans</span>
-                <span className="stat-value">{results.fans}</span>
+              <div className="result-card">
+                <div className="result-label">Demandes en attente</div>
+                <div className="result-value">{results.pendingRequests}</div>
               </div>
             </div>
-            
-            {results.createdContacts > 0 && (
-              <div className="success-message">
-                🎉 {results.createdContacts} contacts créés automatiquement !
-              </div>
-            )}
           </div>
         )}
 
