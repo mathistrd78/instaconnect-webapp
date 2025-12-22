@@ -122,7 +122,7 @@ const PendingRequestsPage = () => {
 
         {pendingRequests.length === 0 ? (
   <div className="empty-state">
-    <div className="empty-icon">⏳</div>
+    <div className="empty-icon">📭</div>
     <p className="empty-message">Aucun contact dans cette liste.</p>
     <p className="empty-description">
       Veuillez lancer une nouvelle analyse.
