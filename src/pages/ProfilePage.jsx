@@ -91,60 +91,6 @@ const ProfilePage = () => {
     }
   };
 
-  // Récupérer le champ "Déjà Pécho?"
-  const handleRecoverDejaPecho = async () => {
-    if (window.confirm('🔧 Récupérer le champ "Déjà Pécho?" ?\n\nCela va restaurer le champ dans vos champs personnalisés et migrer les données existantes.')) {
-      try {
-        const { recoverDejaPecho } = await import('../scripts/recoverDejaPecho');
-        const result = await recoverDejaPecho(currentUser.uid);
-        
-        if (result.success) {
-          let message = '✅ Champ récupéré avec succès !\n\n';
-          
-          if (result.migratedFrom) {
-            message += `📦 Données migrées depuis: ${result.migratedFrom}\n`;
-          }
-          
-          if (result.contactsUpdated) {
-            message += '✅ Contacts mis à jour\n';
-          }
-          
-          message += '\nLa page va se recharger...';
-          
-          alert(message);
-          window.location.reload();
-        } else {
-          alert('❌ Erreur : ' + (result.error || 'Erreur inconnue'));
-        }
-      } catch (error) {
-        console.error('Error recovering field:', error);
-        alert('❌ Erreur lors de la récupération : ' + error.message);
-      }
-    }
-  };
-
-  // SCRIPT DE CORRECTION CONSERVÉ (commenté mais disponible)
-  /*
-  const handleFixFieldsStructure = async () => {
-    if (window.confirm('🔧 Corriger la structure des champs ?\n\nCela replacera birthDate et nextMeeting dans les champs par défaut.')) {
-      try {
-        const { fixFieldsStructure } = await import('../scripts/fixFieldsStructure');
-        const result = await fixFieldsStructure(currentUser.uid);
-        
-        if (result.success) {
-          alert(`✅ Structure corrigée !\n\n${result.movedCount} champ(s) replacé(s)`);
-          window.location.reload();
-        } else {
-          alert('❌ Erreur : ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error fixing fields:', error);
-        alert('❌ Erreur lors de la correction');
-      }
-    }
-  };
-  */
-
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -242,26 +188,6 @@ const ProfilePage = () => {
             <div className="setting-description">Personnalisez vos étiquettes et catégories</div>
           </div>
           <span className="arrow">→</span>
-        </div>
-      </section>
-
-      {/* Section Outils de maintenance */}
-      <section className="profile-section">
-        <h2 className="section-title">🔧 Outils de maintenance</h2>
-        
-        <div className="maintenance-tools">
-          <button 
-            className="btn-maintenance"
-            onClick={handleRecoverDejaPecho}
-          >
-            <div className="btn-maintenance-content">
-              <div className="btn-maintenance-icon">🔄</div>
-              <div className="btn-maintenance-info">
-                <div className="btn-maintenance-title">Récupérer "Déjà Pécho?"</div>
-                <div className="btn-maintenance-desc">Restaure le champ personnalisé et migre les données</div>
-              </div>
-            </div>
-          </button>
         </div>
       </section>
 
