@@ -64,22 +64,34 @@ const FilterBar = ({ activeFilters, onFilterChange }) => {
   ];
 
   const getCountryOptions = () => {
-    const countries = new Set();
-    contacts.forEach(contact => {
-      if (contact.location) {
-        if (typeof contact.location === 'object' && contact.location.country) {
-          countries.add(contact.location.country);
-        } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
-          const country = contact.location.split(',').pop().trim();
-          if (country) countries.add(country);
-        }
+  const countries = new Set();
+  
+  contacts.forEach(contact => {
+    if (contact.location) {
+      let countryCode = '';
+      let countryName = '';
+      
+      if (typeof contact.location === 'object' && contact.location.countryCode) {
+        countryCode = contact.location.countryCode;
+        countryName = contact.location.country;
+      } else if (typeof contact.location === 'string' && contact.location.includes(',')) {
+        countryName = contact.location.split(',').pop().trim();
       }
-    });
-    return Array.from(countries).sort().map(country => ({
-      value: country,
-      label: country
-    }));
-  };
+      
+      if (countryCode) {
+        // Grouper par countryCode pour éviter doublons
+        countries.add(`${countryCode}|${countryName}`);
+      }
+    }
+  });
+  
+  return Array.from(countries)
+    .map(entry => {
+      const [code, name] = entry.split('|');
+      return { value: code, label: name };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+};
 
   const getFieldOptions = (field) => {
     // Special filters
