@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch } from 'firebase/firestore';
 import '../styles/Analyse.css';
 
 const AnalysePage = () => {
   const navigate = useNavigate();
-  const { contacts, addContact, deleteMultipleContacts, updateContact } = useApp();
+  const { contacts, setContacts, deleteMultipleContacts } = useApp();
   const { currentUser } = useAuth();
   const [file, setFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -122,14 +122,29 @@ const AnalysePage = () => {
     setProgress('Extraction du fichier ZIP...');
     
     try {
-      // ÉTAPE 0 : Retirer le badge "Nouveau" de TOUS les contacts existants
+      // ÉTAPE 0 : Retirer le badge "Nouveau" de TOUS les contacts existants - BATCH OPTIMISÉ
       setProgress('Préparation de l\'analyse...');
-      console.log('🔄 Removing isNew badge from all existing contacts...');
+      console.log('🔄 Removing isNew badge from all existing contacts (BATCH)...');
       
-      for (const contact of contacts) {
-        if (contact.isNew) {
-          await updateContact(contact.id, { ...contact, isNew: false });
-        }
+      const contactsWithNewBadge = contacts.filter(c => c.isNew);
+      
+      if (contactsWithNewBadge.length > 0) {
+        const batch = writeBatch(db);
+        const userId = currentUser.uid;
+        
+        contactsWithNewBadge.forEach(contact => {
+          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
+          batch.update(contactRef, { isNew: false });
+        });
+        
+        await batch.commit();
+        console.log(`✅ Removed isNew badge from ${contactsWithNewBadge.length} contacts (1 batch write instead of ${contactsWithNewBadge.length})`);
+        
+        // Update local state
+        const updatedContacts = contacts.map(c => 
+          c.isNew ? { ...c, isNew: false } : c
+        );
+        setContacts(updatedContacts);
       }
       
       console.log('✅ All existing contacts updated (isNew = false)');
@@ -245,32 +260,32 @@ const AnalysePage = () => {
       console.log(`⏳ ${pendingRequests.length} pending requests`);
 
       // ÉTAPE 1 : VÉRIFIER les contacts à supprimer (SANS LES SUPPRIMER)
-setProgress('Vérification des contacts existants...');
+      setProgress('Vérification des contacts existants...');
 
-const contactsToDelete = [];
-const followingLower = following.map(f => f.toLowerCase());
-const followersLower = followers.map(f => f.toLowerCase());
+      const contactsToDelete = [];
+      const followingLower = following.map(f => f.toLowerCase());
+      const followersLower = followers.map(f => f.toLowerCase());
 
-for (const contact of contacts) {
-  const instagramUsername = (contact.instagram || '').toLowerCase().replace('@', '');
-  
-  if (instagramUsername) {
-    // Le contact doit être à la fois dans followers ET dans following (mutual)
-    const isInFollowers = followersLower.includes(instagramUsername);
-    const isInFollowing = followingLower.includes(instagramUsername);
-    
-    // Si le contact n'est PAS dans les deux listes, on le supprime
-    if (!isInFollowers || !isInFollowing) {
-      contactsToDelete.push(contact);
-      
-      console.log(`❌ Contact à supprimer: ${contact.firstName} (@${instagramUsername})`);
-      console.log(`   - Dans followers: ${isInFollowers}`);
-      console.log(`   - Dans following: ${isInFollowing}`);
-    }
-  }
-}
+      for (const contact of contacts) {
+        const instagramUsername = (contact.instagram || '').toLowerCase().replace('@', '');
+        
+        if (instagramUsername) {
+          // Le contact doit être à la fois dans followers ET dans following (mutual)
+          const isInFollowers = followersLower.includes(instagramUsername);
+          const isInFollowing = followingLower.includes(instagramUsername);
+          
+          // Si le contact n'est PAS dans les deux listes, on le supprime
+          if (!isInFollowers || !isInFollowing) {
+            contactsToDelete.push(contact);
+            
+            console.log(`❌ Contact à supprimer: ${contact.firstName} (@${instagramUsername})`);
+            console.log(`   - Dans followers: ${isInFollowers}`);
+            console.log(`   - Dans following: ${isInFollowing}`);
+          }
+        }
+      }
 
-console.log(`📊 Total contacts à supprimer: ${contactsToDelete.length}`);
+      console.log(`📊 Total contacts à supprimer: ${contactsToDelete.length}`);
       
       // ÉTAPE 2 : Si des suppressions sont détectées, demander confirmation AVANT toute modification
       if (contactsToDelete.length > 0) {
@@ -320,24 +335,25 @@ console.log(`📊 Total contacts à supprimer: ${contactsToDelete.length}`);
 
       setProgress('Création des fiches contacts...');
 
-      // Create contact cards for mutual followers
+      // Create contact cards for mutual followers - BATCH OPTIMISÉ
       let created = 0;
       let alreadyExists = 0;
 
-      for (const username of mutualFollowers) {
-        // Check if contact already exists (by Instagram username)
-        const existingContact = contacts.find(c => {
-          const contactUsername = (c.instagram || '').toLowerCase().replace('@', '');
-          return contactUsername === username.toLowerCase();
-        });
+      // Créer un Set des usernames existants pour une recherche rapide
+      const existingUsernames = new Set(
+        contacts.map(c => (c.instagram || '').toLowerCase().replace('@', ''))
+      );
 
-        if (existingContact) {
+      const newContactsToCreate = [];
+
+      for (const username of mutualFollowers) {
+        if (existingUsernames.has(username.toLowerCase())) {
           alreadyExists++;
           continue;
         }
 
-        // Create new contact WITH isNew badge
         const newContact = {
+          id: `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           firstName: `@${username}`,
           instagram: `@${username}`,
           relationType: '',
@@ -348,16 +364,50 @@ console.log(`📊 Total contacts à supprimer: ${contactsToDelete.length}`);
           birthDate: '',
           nextMeeting: '',
           notes: '',
-          isNew: true // ← BADGE NOUVEAU
+          isNew: true,
+          createdAt: new Date().toISOString()
         };
 
-        await addContact(newContact);
+        newContactsToCreate.push(newContact);
         created++;
         
-        // Update progress every 10 contacts
         if (created % 10 === 0) {
-          setProgress(`Création des fiches contacts... (${created} créées)`);
+          setProgress(`Création des fiches contacts... (${created} préparées)`);
         }
+      }
+
+      // Batch write des nouveaux contacts - Firebase limite à 500 opérations par batch
+      if (newContactsToCreate.length > 0) {
+        setProgress(`Sauvegarde de ${newContactsToCreate.length} nouveaux contacts...`);
+        
+        const userId = currentUser.uid;
+        const batches = [];
+        let currentBatch = writeBatch(db);
+        let operationCount = 0;
+
+        for (const contact of newContactsToCreate) {
+          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
+          currentBatch.set(contactRef, contact);
+          operationCount++;
+
+          // Firebase limite à 500 opérations par batch
+          if (operationCount === 500) {
+            batches.push(currentBatch.commit());
+            currentBatch = writeBatch(db);
+            operationCount = 0;
+          }
+        }
+
+        // Commit le dernier batch s'il contient des opérations
+        if (operationCount > 0) {
+          batches.push(currentBatch.commit());
+        }
+
+        await Promise.all(batches);
+        console.log(`✅ Created ${newContactsToCreate.length} contacts in ${batches.length} batch(es) instead of ${newContactsToCreate.length} individual writes`);
+        
+        // Update local state
+        setContacts(prev => [...prev, ...newContactsToCreate]);
       }
 
       setProgress('Sauvegarde des données Instagram...');
