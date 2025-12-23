@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/CityAutocomplete.css';
 
+const RECENT_LOCATIONS_KEY = 'instaconnect_recent_locations';
+const MAX_RECENT = 5;
+
 const CityAutocomplete = ({ value, onChange, contacts, placeholder }) => {
   const [inputValue, setInputValue] = useState('');
   const [results, setResults] = useState([]);
@@ -24,13 +27,19 @@ const CityAutocomplete = ({ value, onChange, contacts, placeholder }) => {
     }
   }, [value]);
 
-  // Load recent locations
+  // Load recent locations from localStorage
   useEffect(() => {
-    if (contacts && contacts.length > 0) {
-      const recent = cityAutocomplete.getRecentLocations(contacts);
-      setRecentLocations(recent);
+    try {
+      const stored = localStorage.getItem(RECENT_LOCATIONS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('📦 Loaded recent locations from localStorage:', parsed);
+        setRecentLocations(parsed);
+      }
+    } catch (error) {
+      console.error('❌ Error loading recent locations:', error);
     }
-  }, [contacts]);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -56,8 +65,14 @@ const CityAutocomplete = ({ value, onChange, contacts, placeholder }) => {
     setInputValue(query);
 
     if (query.trim().length < 2) {
-      setIsOpen(false);
-      setResults([]);
+      // Si moins de 2 caractères, afficher les récentes
+      if (query.trim().length === 0 && recentLocations.length > 0) {
+        setResults(recentLocations);
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+        setResults([]);
+      }
       return;
     }
 
@@ -72,9 +87,44 @@ const CityAutocomplete = ({ value, onChange, contacts, placeholder }) => {
     }, 300);
   };
 
+  const saveRecentLocation = (location) => {
+    try {
+      // Créer une copie pour éviter les mutations
+      const newRecent = [...recentLocations];
+      
+      // Retirer l'élément s'il existe déjà (pour le mettre en premier)
+      const existingIndex = newRecent.findIndex(
+        loc => loc.displayName === location.displayName
+      );
+      if (existingIndex !== -1) {
+        newRecent.splice(existingIndex, 1);
+      }
+      
+      // Ajouter en première position
+      newRecent.unshift(location);
+      
+      // Limiter à MAX_RECENT éléments
+      const limited = newRecent.slice(0, MAX_RECENT);
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(limited));
+      
+      // Mettre à jour l'état
+      setRecentLocations(limited);
+      
+      console.log('✅ Saved recent location:', location.displayName);
+      console.log('📋 Recent locations:', limited.map(l => l.displayName));
+    } catch (error) {
+      console.error('❌ Error saving recent location:', error);
+    }
+  };
+
   const handleSelect = (location) => {
     setInputValue(location.displayName);
     setIsOpen(false);
+    
+    // 🎯 Sauvegarder dans les récentes
+    saveRecentLocation(location);
     
     // Call onChange with full location object
     onChange(location);
@@ -103,14 +153,14 @@ const CityAutocomplete = ({ value, onChange, contacts, placeholder }) => {
             </div>
           ) : (
             <>
-              {inputValue.trim().length === 0 && (
+              {inputValue.trim().length === 0 && recentLocations.length > 0 && (
                 <div className="city-dropdown-header">
-                  Dernières localisations
+                  📍 Dernières localisations
                 </div>
               )}
               {results.map((location, index) => (
                 <div
-                  key={index}
+                  key={`${location.displayName}-${index}`}
                   className="city-dropdown-item"
                   onClick={() => handleSelect(location)}
                 >
