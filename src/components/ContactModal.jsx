@@ -288,12 +288,14 @@ const ContactModal = ({ contact, onClose, onSave }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Header fixe en haut */}
         <div className="modal-header">
           <h2>{contact?.id ? 'Modifier le contact' : 'Nouveau contact'}</h2>
           <button className="close-button" onClick={onClose}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        {/* Formulaire scrollable (sans les boutons) */}
+        <form id="contact-form" onSubmit={handleSubmit} className="modal-form">
           {allFields.map(field => (
             <div key={field.id} className="form-group">
               <label htmlFor={field.id} className="form-label">
@@ -303,16 +305,17 @@ const ContactModal = ({ contact, onClose, onSave }) => {
               {renderField(field)}
             </div>
           ))}
-
-          <div className="modal-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>
-              Annuler
-            </button>
-            <button type="submit" className="btn-save">
-              Enregistrer
-            </button>
-          </div>
         </form>
+
+        {/* Boutons fixes en bas (en dehors du form) */}
+        <div className="modal-actions">
+          <button type="button" className="btn-cancel" onClick={onClose}>
+            Annuler
+          </button>
+          <button type="submit" form="contact-form" className="btn-save">
+            Enregistrer
+          </button>
+        </div>
       </div>
     </div>
   );
