@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../services/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/ContactViewModal.css';
 
 const ContactViewModal = ({ contact, onClose, onEdit }) => {
-  const { getAllFields } = useApp();
+  const { getAllFields, deleteContact } = useApp();
+  const { currentUser } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
   const allFields = getAllFields();
 
   const getFieldDisplayValue = (field, value) => {
@@ -97,6 +102,66 @@ const ContactViewModal = ({ contact, onClose, onEdit }) => {
       : `@${contact.instagram}`;
   };
 
+  const handleDeleteAndUnfollow = async () => {
+    if (!currentUser || !contact.instagram) {
+      alert('Impossible de supprimer ce contact');
+      return;
+    }
+
+    // Confirmation
+    const confirmMessage = `Êtes-vous sûr de vouloir supprimer ${contact.firstName} et l'ajouter à la liste "A ne plus suivre" ?`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const userId = currentUser.uid;
+      
+      // Récupérer la liste actuelle "A ne plus suivre"
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      let doNotFollowList = [];
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        doNotFollowList = data.doNotFollowList || [];
+      }
+
+      // Extraire le username Instagram (sans @)
+      const username = contact.instagram.startsWith('@') 
+        ? contact.instagram.substring(1) 
+        : contact.instagram;
+
+      // Ajouter à la liste si pas déjà présent
+      if (!doNotFollowList.includes(username)) {
+        doNotFollowList.push(username);
+        
+        // Sauvegarder dans Firebase
+        await setDoc(doc(db, 'users', userId), {
+          doNotFollowList: doNotFollowList
+        }, { merge: true });
+
+        console.log(`✅ ${username} ajouté à la liste "A ne plus suivre"`);
+      }
+
+      // Supprimer le contact
+      await deleteContact(contact.id);
+      console.log('✅ Contact supprimé');
+
+      // Fermer la modale
+      onClose();
+
+      // Message de succès
+      alert(`${contact.firstName} a été supprimé et ajouté à la liste "A ne plus suivre"`);
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression du contact');
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="contact-view-overlay" onClick={onClose}>
       <div className="contact-view-modal" onClick={(e) => e.stopPropagation()}>
@@ -140,8 +205,19 @@ const ContactViewModal = ({ contact, onClose, onEdit }) => {
         </div>
 
         <div className="contact-view-footer">
-          <button className="btn-edit-contact" onClick={onEdit}>
+          <button 
+            className="btn-edit-contact" 
+            onClick={onEdit}
+            disabled={isDeleting}
+          >
             Modifier ✏️
+          </button>
+          <button 
+            className="btn-delete-unfollow" 
+            onClick={handleDeleteAndUnfollow}
+            disabled={isDeleting}
+          >
+            {isDeleting ? '...' : 'Supprimer et unfollowed 🚫'}
           </button>
         </div>
       </div>
