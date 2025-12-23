@@ -131,9 +131,6 @@ export const AppProvider = ({ children }) => {
     metadata: false
   });
 
-  // 🆕 Flag pour éviter de marquer metadata comme modifié lors du chargement initial
-  const isInitialLoadRef = useRef(true);
-
   // ============================================
   // 📦 LOCALSTORAGE HELPERS
   // ============================================
@@ -266,13 +263,6 @@ export const AppProvider = ({ children }) => {
       }
 
       hasLoadedRef.current = true;
-      
-      // 🆕 Après le chargement initial, autoriser le tracking des modifications
-      setTimeout(() => {
-        isInitialLoadRef.current = false;
-        console.log('✅ Initial load complete, metadata tracking enabled');
-      }, 1000);
-
     } catch (error) {
       console.error('❌ Error loading user data:', error);
     } finally {
@@ -297,25 +287,25 @@ export const AppProvider = ({ children }) => {
       try {
         const userId = currentUser.uid;
         const batch = writeBatch(db);
-        let operationsCount = 0;
+        let hasChanges = false;
 
-        // 🎯 Sauvegarder seulement les contacts modifiés
+        // Sauvegarder seulement les contacts modifiés
         if (pendingChangesRef.current.contacts.size > 0) {
-          console.log(`💾 Saving ${pendingChangesRef.current.contacts.size} modified contact(s)...`);
+          console.log(`💾 Saving ${pendingChangesRef.current.contacts.size} modified contacts...`);
           
           pendingChangesRef.current.contacts.forEach(contactId => {
             const contact = contacts.find(c => c.id === contactId);
             if (contact) {
               const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
               batch.set(contactRef, contact);
-              operationsCount++;
+              hasChanges = true;
             }
           });
 
           pendingChangesRef.current.contacts.clear();
         }
 
-        // 🎯 Sauvegarder metadata SEULEMENT si vraiment modifié
+        // Sauvegarder metadata si modifié
         if (pendingChangesRef.current.metadata) {
           console.log('💾 Saving metadata...');
           const userRef = doc(db, 'users', userId);
@@ -325,18 +315,16 @@ export const AppProvider = ({ children }) => {
             defaultFields
           };
           batch.set(userRef, metadata, { merge: true });
-          operationsCount++;
+          hasChanges = true;
 
           // Mettre à jour cache metadata
           saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, metadata);
           pendingChangesRef.current.metadata = false;
         }
 
-        if (operationsCount > 0) {
+        if (hasChanges) {
           await batch.commit();
-          console.log(`✅ ${operationsCount} operation(s) saved to Firebase`);
-        } else {
-          console.log('ℹ️ No changes to save');
+          console.log('✅ Data saved to Firebase');
         }
       } catch (error) {
         console.error('❌ Error saving to Firebase:', error);
@@ -368,7 +356,6 @@ export const AppProvider = ({ children }) => {
     pendingChangesRef.current.contacts.add(newContact.id);
     debouncedSave();
 
-    console.log(`📝 Contact "${newContact.firstName}" marked for save`);
     return newContact;
   }, [currentUser, debouncedSave, saveToLocalStorage]);
 
@@ -387,8 +374,6 @@ export const AppProvider = ({ children }) => {
     // Marquer pour sauvegarde
     pendingChangesRef.current.contacts.add(contactId);
     debouncedSave();
-
-    console.log(`📝 Contact "${contactId}" marked for save`);
   }, [currentUser, debouncedSave, saveToLocalStorage]);
 
   const deleteContact = useCallback(async (contactId) => {
@@ -446,39 +431,6 @@ export const AppProvider = ({ children }) => {
     await debouncedSave();
   }, [debouncedSave]);
 
-  // Fonction pour sauvegarder les contacts (pour compatibilité)
-  const saveContacts = useCallback(async (contactsToSave = null, saveMetadata = false) => {
-    if (!currentUser) return;
-
-    try {
-      const userId = currentUser.uid;
-      const batch = writeBatch(db);
-
-      if (contactsToSave) {
-        const contactsArray = Array.isArray(contactsToSave) ? contactsToSave : [contactsToSave];
-        contactsArray.forEach(contact => {
-          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
-          batch.set(contactRef, contact);
-        });
-      }
-
-      if (saveMetadata) {
-        const userRef = doc(db, 'users', userId);
-        const metadata = {
-          customTags,
-          customFields,
-          defaultFields
-        };
-        batch.set(userRef, metadata, { merge: true });
-      }
-
-      await batch.commit();
-      console.log('✅ Data saved to Firestore');
-    } catch (error) {
-      console.error('❌ Error saving to Firestore:', error);
-    }
-  }, [currentUser, customTags, customFields, defaultFields]);
-
   // ============================================
   // 🎨 HELPERS
   // ============================================
@@ -524,7 +476,6 @@ export const AppProvider = ({ children }) => {
         discussionStatus: []
       });
       hasLoadedRef.current = false;
-      isInitialLoadRef.current = true;
       
       // Unsubscribe listener
       if (unsubscribeRef.current) {
@@ -546,10 +497,9 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
-  // 🆕 Marquer metadata comme modifié SEULEMENT après le chargement initial
+  // Marquer metadata comme modifié quand ils changent
   useEffect(() => {
-    if (!isInitialLoadRef.current && hasLoadedRef.current) {
-      console.log('📝 Metadata changed, marking for save');
+    if (hasLoadedRef.current) {
       pendingChangesRef.current.metadata = true;
       debouncedSave();
     }
@@ -570,8 +520,7 @@ export const AppProvider = ({ children }) => {
     setCustomTags,
     getAllFields,
     loadUserData,
-    saveContacts,
-    forceSave,
+    forceSave, // Export forceSave pour les cas où on veut sauver immédiatement
     loading,
     darkMode,
     toggleDarkMode
