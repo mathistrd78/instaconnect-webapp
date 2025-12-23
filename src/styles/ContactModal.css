@@ -12,26 +12,28 @@
   padding: 20px;
 }
 
+/* Structure flex pour header fixe + contenu scrollable + footer fixe */
 .modal-content {
   background: var(--surface);
   border-radius: 20px;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
-  overflow-y: auto;
   box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* Header fixe en haut */
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 24px 32px;
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
   background: var(--surface);
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -60,8 +62,11 @@
   color: white;
 }
 
+/* Zone scrollable (formulaire) */
 .modal-form {
   padding: 32px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .form-group {
@@ -198,13 +203,14 @@
   color: var(--text-primary);
 }
 
-/* Modal Actions */
+/* Boutons fixes en bas */
 .modal-actions {
   display: flex;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
+  padding: 24px 32px;
   border-top: 1px solid var(--border-color);
+  background: var(--surface);
+  flex-shrink: 0;
 }
 
 .btn-cancel {
@@ -250,8 +256,15 @@
     border-radius: 0;
   }
 
-  .modal-header,
+  .modal-header {
+    padding: 20px;
+  }
+
   .modal-form {
+    padding: 20px;
+  }
+
+  .modal-actions {
     padding: 20px;
   }
 
