@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../services/firebase';
 import {
@@ -8,7 +8,8 @@ import {
   setDoc,
   writeBatch,
   getDoc,
-  deleteDoc
+  deleteDoc,
+  onSnapshot
 } from 'firebase/firestore';
 
 const AppContext = createContext();
@@ -98,6 +99,13 @@ const DEFAULT_FIELDS = [
   }
 ];
 
+// 🔑 Clés localStorage
+const STORAGE_KEYS = {
+  CONTACTS: 'instaconnect_contacts',
+  METADATA: 'instaconnect_metadata',
+  LAST_SYNC: 'instaconnect_last_sync'
+};
+
 export const AppProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [contacts, setContacts] = useState([]);
@@ -114,154 +122,279 @@ export const AppProvider = ({ children }) => {
     return saved === null ? true : saved === 'true';
   });
 
-  // Load user data from Firestore
-  const loadUserData = async () => {
+  // 🎯 Refs pour debouncing et tracking
+  const saveTimeoutRef = useRef(null);
+  const unsubscribeRef = useRef(null);
+  const hasLoadedRef = useRef(false);
+  const pendingChangesRef = useRef({
+    contacts: new Set(),
+    metadata: false
+  });
+
+  // ============================================
+  // 📦 LOCALSTORAGE HELPERS
+  // ============================================
+
+  const saveToLocalStorage = useCallback((key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.warn('❌ localStorage save failed:', error);
+    }
+  }, []);
+
+  const loadFromLocalStorage = useCallback((key, defaultValue = null) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.warn('❌ localStorage load failed:', error);
+      return defaultValue;
+    }
+  }, []);
+
+  // ============================================
+  // 📥 LOAD DATA (with localStorage cache)
+  // ============================================
+
+  const loadUserData = useCallback(async (forceRefresh = false) => {
     if (!currentUser) return;
+    if (hasLoadedRef.current && !forceRefresh) {
+      console.log('✅ Data already loaded, skipping...');
+      return;
+    }
 
     setLoading(true);
-    try {
-      const userId = currentUser.uid;
-      console.log('📥 Loading user data from Firestore...');
+    const userId = currentUser.uid;
 
-      // Load metadata
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        
-        if (userData.customTags) {
-          setCustomTags(userData.customTags);
+    try {
+      // 1️⃣ CHARGER DEPUIS LOCALSTORAGE D'ABORD (instantané)
+      if (!forceRefresh) {
+        console.log('📦 Loading from localStorage first...');
+        const cachedContacts = loadFromLocalStorage(`${STORAGE_KEYS.CONTACTS}_${userId}`);
+        const cachedMetadata = loadFromLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`);
+
+        if (cachedContacts) {
+          console.log(`✅ Loaded ${cachedContacts.length} contacts from cache`);
+          setContacts(cachedContacts);
         }
-        
-        if (userData.customFields) {
-          setCustomFields(userData.customFields);
-        }
-        
-        // Load default fields with saved order and merge with tags
-        if (userData.defaultFields) {
-          console.log('📥 Loading saved default fields with order:', userData.defaultFields);
-          // Merge tags from customTags into defaultFields
-          const fieldsWithTags = userData.defaultFields.map(field => {
-            if (field.type === 'select' && userData.customTags && userData.customTags[field.id]) {
-              return {
-                ...field,
-                tags: userData.customTags[field.id]
-              };
-            }
-            return field;
-          });
-          setDefaultFields(fieldsWithTags);
-        } else if (userData.customTags) {
-          // If no saved defaultFields but we have customTags, merge them
-          const fieldsWithTags = DEFAULT_FIELDS.map(field => {
-            if (field.type === 'select' && userData.customTags[field.id]) {
-              return {
-                ...field,
-                tags: userData.customTags[field.id]
-              };
-            }
-            return field;
-          });
-          setDefaultFields(fieldsWithTags);
+
+        if (cachedMetadata) {
+          console.log('✅ Loaded metadata from cache');
+          if (cachedMetadata.customTags) setCustomTags(cachedMetadata.customTags);
+          if (cachedMetadata.customFields) setCustomFields(cachedMetadata.customFields);
+          if (cachedMetadata.defaultFields) {
+            const fieldsWithTags = cachedMetadata.defaultFields.map(field => {
+              if (field.type === 'select' && cachedMetadata.customTags?.[field.id]) {
+                return { ...field, tags: cachedMetadata.customTags[field.id] };
+              }
+              return field;
+            });
+            setDefaultFields(fieldsWithTags);
+          }
         }
       }
 
-      // Load contacts
-      const contactsSnapshot = await getDocs(
-        collection(db, 'users', userId, 'contacts')
-      );
-      const contactsData = contactsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setContacts(contactsData);
-      console.log(`✅ Loaded ${contactsData.length} contacts`);
+      // 2️⃣ SYNCHRO FIREBASE EN ARRIÈRE-PLAN (seulement si nécessaire)
+      const lastSync = loadFromLocalStorage(`${STORAGE_KEYS.LAST_SYNC}_${userId}`, 0);
+      const now = Date.now();
+      const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+      if (forceRefresh || (now - lastSync) > SYNC_INTERVAL) {
+        console.log('🔄 Syncing with Firebase...');
+
+        // Load metadata
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          if (userData.customTags) setCustomTags(userData.customTags);
+          if (userData.customFields) setCustomFields(userData.customFields);
+          
+          if (userData.defaultFields) {
+            const fieldsWithTags = userData.defaultFields.map(field => {
+              if (field.type === 'select' && userData.customTags?.[field.id]) {
+                return { ...field, tags: userData.customTags[field.id] };
+              }
+              return field;
+            });
+            setDefaultFields(fieldsWithTags);
+          } else if (userData.customTags) {
+            const fieldsWithTags = DEFAULT_FIELDS.map(field => {
+              if (field.type === 'select' && userData.customTags[field.id]) {
+                return { ...field, tags: userData.customTags[field.id] };
+              }
+              return field;
+            });
+            setDefaultFields(fieldsWithTags);
+          }
+
+          // Sauvegarder metadata dans cache
+          saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, userData);
+        }
+
+        // 3️⃣ SETUP REALTIME LISTENER (onSnapshot) - 1 seule fois
+        if (!unsubscribeRef.current) {
+          console.log('👂 Setting up realtime listener...');
+          const contactsRef = collection(db, 'users', userId, 'contacts');
+          
+          unsubscribeRef.current = onSnapshot(
+            contactsRef,
+            (snapshot) => {
+              const contactsData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              }));
+              
+              console.log(`✅ Realtime update: ${contactsData.length} contacts`);
+              setContacts(contactsData);
+              
+              // Mettre à jour cache
+              saveToLocalStorage(`${STORAGE_KEYS.CONTACTS}_${userId}`, contactsData);
+            },
+            (error) => {
+              console.error('❌ Realtime listener error:', error);
+            }
+          );
+        }
+
+        // Marquer dernière synchro
+        saveToLocalStorage(`${STORAGE_KEYS.LAST_SYNC}_${userId}`, now);
+      }
+
+      hasLoadedRef.current = true;
     } catch (error) {
       console.error('❌ Error loading user data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, loadFromLocalStorage, saveToLocalStorage]);
 
-  // Save contacts to Firestore
-  const saveContacts = async (contactsToSave = null, saveMetadata = false, explicitMetadata = null) => {
+  // ============================================
+  // 💾 SAVE DATA (with debouncing)
+  // ============================================
+
+  const debouncedSave = useCallback(() => {
     if (!currentUser) return;
 
-    try {
-      const userId = currentUser.uid;
-      const batch = writeBatch(db);
-
-      if (contactsToSave) {
-        const contactsArray = Array.isArray(contactsToSave) ? contactsToSave : [contactsToSave];
-        contactsArray.forEach(contact => {
-          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
-          batch.set(contactRef, contact);
-        });
-      } else if (contacts.length > 0) {
-        contacts.forEach(contact => {
-          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
-          batch.set(contactRef, contact);
-        });
-      }
-
-      if (saveMetadata) {
-        const userRef = doc(db, 'users', userId);
-        const metadataToSave = explicitMetadata || {
-          customTags,
-          customFields,
-          defaultFields
-        };
-        batch.set(userRef, metadataToSave, { merge: true });
-        console.log('💾 Saving metadata to Firebase:', metadataToSave);
-      }
-
-      await batch.commit();
-      console.log('✅ Data saved to Firestore');
-    } catch (error) {
-      console.error('❌ Error saving to Firestore:', error);
+    // Annuler la sauvegarde précédente
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
-  };
 
-  // Add contact
-  const addContact = async (contact) => {
+    // Planifier nouvelle sauvegarde après 2 secondes
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const userId = currentUser.uid;
+        const batch = writeBatch(db);
+        let hasChanges = false;
+
+        // Sauvegarder seulement les contacts modifiés
+        if (pendingChangesRef.current.contacts.size > 0) {
+          console.log(`💾 Saving ${pendingChangesRef.current.contacts.size} modified contacts...`);
+          
+          pendingChangesRef.current.contacts.forEach(contactId => {
+            const contact = contacts.find(c => c.id === contactId);
+            if (contact) {
+              const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
+              batch.set(contactRef, contact);
+              hasChanges = true;
+            }
+          });
+
+          pendingChangesRef.current.contacts.clear();
+        }
+
+        // Sauvegarder metadata si modifié
+        if (pendingChangesRef.current.metadata) {
+          console.log('💾 Saving metadata...');
+          const userRef = doc(db, 'users', userId);
+          const metadata = {
+            customTags,
+            customFields,
+            defaultFields
+          };
+          batch.set(userRef, metadata, { merge: true });
+          hasChanges = true;
+
+          // Mettre à jour cache metadata
+          saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, metadata);
+          pendingChangesRef.current.metadata = false;
+        }
+
+        if (hasChanges) {
+          await batch.commit();
+          console.log('✅ Data saved to Firebase');
+        }
+      } catch (error) {
+        console.error('❌ Error saving to Firebase:', error);
+      }
+    }, 2000); // 2 secondes de debounce
+  }, [currentUser, contacts, customTags, customFields, defaultFields, saveToLocalStorage]);
+
+  // ============================================
+  // 🔧 CRUD OPERATIONS
+  // ============================================
+
+  const addContact = useCallback(async (contact) => {
     const newContact = {
       ...contact,
       id: `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString()
     };
     
-    const updatedContacts = [...contacts, newContact];
-    setContacts(updatedContacts);
-    await saveContacts(newContact);
+    setContacts(prev => {
+      const updated = [...prev, newContact];
+      // Mettre à jour cache immédiatement
+      if (currentUser) {
+        saveToLocalStorage(`${STORAGE_KEYS.CONTACTS}_${currentUser.uid}`, updated);
+      }
+      return updated;
+    });
+
+    // Marquer pour sauvegarde
+    pendingChangesRef.current.contacts.add(newContact.id);
+    debouncedSave();
+
     return newContact;
-  };
+  }, [currentUser, debouncedSave, saveToLocalStorage]);
 
-  // Update contact
-  const updateContact = async (contactId, updates) => {
-    const updatedContacts = contacts.map(c =>
-      c.id === contactId ? { ...c, ...updates } : c
-    );
-    setContacts(updatedContacts);
-    
-    const updatedContact = updatedContacts.find(c => c.id === contactId);
-    if (updatedContact) {
-      await saveContacts(updatedContact);
-    }
-  };
+  const updateContact = useCallback(async (contactId, updates) => {
+    setContacts(prev => {
+      const updated = prev.map(c =>
+        c.id === contactId ? { ...c, ...updates } : c
+      );
+      // Mettre à jour cache immédiatement
+      if (currentUser) {
+        saveToLocalStorage(`${STORAGE_KEYS.CONTACTS}_${currentUser.uid}`, updated);
+      }
+      return updated;
+    });
 
-  // Delete contact
-  const deleteContact = async (contactId) => {
-    const updatedContacts = contacts.filter(c => c.id !== contactId);
-    setContacts(updatedContacts);
+    // Marquer pour sauvegarde
+    pendingChangesRef.current.contacts.add(contactId);
+    debouncedSave();
+  }, [currentUser, debouncedSave, saveToLocalStorage]);
+
+  const deleteContact = useCallback(async (contactId) => {
+    setContacts(prev => {
+      const updated = prev.filter(c => c.id !== contactId);
+      // Mettre à jour cache immédiatement
+      if (currentUser) {
+        saveToLocalStorage(`${STORAGE_KEYS.CONTACTS}_${currentUser.uid}`, updated);
+      }
+      return updated;
+    });
     
+    // Supprimer immédiatement de Firebase
     if (currentUser) {
       const contactRef = doc(db, 'users', currentUser.uid, 'contacts', contactId);
       await deleteDoc(contactRef);
+      console.log('✅ Contact deleted from Firebase');
     }
-  };
+  }, [currentUser, saveToLocalStorage]);
 
-  // Delete multiple contacts (for batch operations)
-  const deleteMultipleContacts = async (contactIds) => {
+  const deleteMultipleContacts = useCallback(async (contactIds) => {
     if (!currentUser) return;
 
     try {
@@ -275,40 +408,51 @@ export const AppProvider = ({ children }) => {
 
       await batch.commit();
 
-      // Update local state
-      const updatedContacts = contacts.filter(c => !contactIds.includes(c.id));
-      setContacts(updatedContacts);
+      setContacts(prev => {
+        const updated = prev.filter(c => !contactIds.includes(c.id));
+        // Mettre à jour cache immédiatement
+        saveToLocalStorage(`${STORAGE_KEYS.CONTACTS}_${userId}`, updated);
+        return updated;
+      });
 
       console.log(`✅ Deleted ${contactIds.length} contacts`);
     } catch (error) {
       console.error('❌ Error deleting multiple contacts:', error);
       throw error;
     }
-  };
+  }, [currentUser, saveToLocalStorage]);
 
-  // Get all fields (default + custom)
-  const getAllFields = () => {
-    return [...defaultFields, ...customFields].sort((a, b) => a.order - b.order);
-  };
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    console.log('toggleDarkMode called, current:', darkMode);
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode.toString());
-    
-    if (newMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
+  // Fonction pour forcer la sauvegarde immédiate
+  const forceSave = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
     }
-    console.log('New mode:', newMode);
-  };
+    await debouncedSave();
+  }, [debouncedSave]);
 
-  // Apply dark mode on mount and when darkMode changes
+  // ============================================
+  // 🎨 HELPERS
+  // ============================================
+
+  const getAllFields = useCallback(() => {
+    return [...defaultFields, ...customFields].sort((a, b) => a.order - b.order);
+  }, [defaultFields, customFields]);
+
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => {
+      const newMode = !prev;
+      localStorage.setItem('darkMode', newMode.toString());
+      return newMode;
+    });
+  }, []);
+
+  // ============================================
+  // 🎯 EFFECTS
+  // ============================================
+
+  // Apply dark mode
   useEffect(() => {
-    console.log('Applying dark mode:', darkMode);
     if (darkMode) {
       document.body.classList.add('dark-mode');
     } else {
@@ -316,11 +460,14 @@ export const AppProvider = ({ children }) => {
     }
   }, [darkMode]);
 
-  // Load data when user logs in
+  // Load data when user logs in (UNE SEULE FOIS)
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !hasLoadedRef.current) {
+      console.log('🚀 Initial load for user:', currentUser.uid);
       loadUserData();
-    } else {
+    } else if (!currentUser) {
+      // Reset quand logout
+      console.log('🔄 User logged out, clearing data');
       setContacts([]);
       setCustomFields([]);
       setCustomTags({
@@ -328,8 +475,35 @@ export const AppProvider = ({ children }) => {
         meetingPlace: [],
         discussionStatus: []
       });
+      hasLoadedRef.current = false;
+      
+      // Unsubscribe listener
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, loadUserData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  // Marquer metadata comme modifié quand ils changent
+  useEffect(() => {
+    if (hasLoadedRef.current) {
+      pendingChangesRef.current.metadata = true;
+      debouncedSave();
+    }
+  }, [customTags, customFields, defaultFields, debouncedSave]);
 
   const value = {
     contacts,
@@ -345,8 +519,8 @@ export const AppProvider = ({ children }) => {
     customTags,
     setCustomTags,
     getAllFields,
-    saveContacts,
     loadUserData,
+    forceSave, // Export forceSave pour les cas où on veut sauver immédiatement
     loading,
     darkMode,
     toggleDarkMode
