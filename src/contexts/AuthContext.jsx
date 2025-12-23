@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -23,70 +23,81 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [inactivityTimer, setInactivityTimer] = useState(null);
+  const inactivityTimerRef = useRef(null);
 
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
-  // Initialize auth persistence
+  // Initialize auth persistence - SESSION pour se déconnecter à la fermeture
   useEffect(() => {
     setPersistence(auth, browserSessionPersistence)
       .then(() => {
-        console.log('✅ Firebase persistence set to SESSION');
+        console.log('✅ Firebase persistence set to SESSION (expires when tab/browser closes)');
       })
       .catch((error) => {
         console.error('❌ Error setting persistence:', error);
       });
   }, []);
 
-  // Check for inactivity on mount
-  useEffect(() => {
-    const lastActivity = localStorage.getItem('lastActivity');
-    if (lastActivity) {
-      const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
-      if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
-        console.log('⏱️ Inactivity timeout detected - logging out');
-        handleLogout();
+  // Fonction de logout
+  const handleLogout = useCallback(async () => {
+    try {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
       }
+      localStorage.setItem('justLoggedOut', 'true');
+      await signOut(auth);
+      console.log('✅ Logout successful');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      return { success: false, error: error.message };
     }
   }, []);
 
-  // Reset inactivity timer
-  const resetInactivityTimer = () => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
+  // Reset inactivity timer - useCallback pour stabiliser la référence
+  const resetInactivityTimer = useCallback(() => {
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
     }
 
-    localStorage.setItem('lastActivity', Date.now().toString());
-
-    const timer = setTimeout(() => {
-      console.log('⏱️ Inactivity timeout - logging out');
+    // Set new timer
+    inactivityTimerRef.current = setTimeout(() => {
+      console.log('⏱️ 10 minutes of inactivity - logging out');
       handleLogout();
     }, INACTIVITY_TIMEOUT);
 
-    setInactivityTimer(timer);
-  };
+    // Debug: confirmer que le timer est réinitialisé
+    console.log('🔄 Inactivity timer reset - will logout in 10 minutes if no activity');
+  }, [INACTIVITY_TIMEOUT, handleLogout]);
 
   // Setup activity listeners
   useEffect(() => {
     if (currentUser) {
       const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
       
+      console.log('✅ Activity listeners attached');
+      
       events.forEach(event => {
         document.addEventListener(event, resetInactivityTimer, true);
       });
 
+      // Initialiser le timer au démarrage
       resetInactivityTimer();
 
       return () => {
+        console.log('🧹 Cleaning up activity listeners');
         events.forEach(event => {
           document.removeEventListener(event, resetInactivityTimer, true);
         });
-        if (inactivityTimer) {
-          clearTimeout(inactivityTimer);
+        if (inactivityTimerRef.current) {
+          clearTimeout(inactivityTimerRef.current);
+          inactivityTimerRef.current = null;
         }
       };
     }
-  }, [currentUser]);
+  }, [currentUser, resetInactivityTimer]);
 
   // Auth state observer
   useEffect(() => {
@@ -159,18 +170,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       return { success: false, error: errorMessage };
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      localStorage.setItem('justLoggedOut', 'true');
-      await signOut(auth);
-      console.log('✅ Logout successful');
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-      return { success: false, error: error.message };
     }
   };
 
