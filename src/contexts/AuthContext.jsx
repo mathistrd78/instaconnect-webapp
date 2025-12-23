@@ -24,21 +24,14 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const inactivityTimerRef = useRef(null);
+  const authUnsubscribeRef = useRef(null);
 
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
-  // Initialize auth persistence - SESSION pour se déconnecter à la fermeture
-  useEffect(() => {
-    setPersistence(auth, browserSessionPersistence)
-      .then(() => {
-        console.log('✅ Firebase persistence set to SESSION (expires when tab/browser closes)');
-      })
-      .catch((error) => {
-        console.error('❌ Error setting persistence:', error);
-      });
-  }, []);
+  // ============================================
+  // 🔧 AUTH FUNCTIONS
+  // ============================================
 
-  // Fonction de logout
   const handleLogout = useCallback(async () => {
     try {
       if (inactivityTimerRef.current) {
@@ -55,66 +48,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Reset inactivity timer - useCallback pour stabiliser la référence
   const resetInactivityTimer = useCallback(() => {
-    // Clear existing timer
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
 
-    // Set new timer
     inactivityTimerRef.current = setTimeout(() => {
       console.log('⏱️ 10 minutes of inactivity - logging out');
       handleLogout();
     }, INACTIVITY_TIMEOUT);
-
-    // Debug: confirmer que le timer est réinitialisé
-    console.log('🔄 Inactivity timer reset - will logout in 10 minutes if no activity');
   }, [INACTIVITY_TIMEOUT, handleLogout]);
 
-  // Setup activity listeners
-  useEffect(() => {
-    if (currentUser) {
-      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-      
-      console.log('✅ Activity listeners attached');
-      
-      events.forEach(event => {
-        document.addEventListener(event, resetInactivityTimer, true);
-      });
-
-      // Initialiser le timer au démarrage
-      resetInactivityTimer();
-
-      return () => {
-        console.log('🧹 Cleaning up activity listeners');
-        events.forEach(event => {
-          document.removeEventListener(event, resetInactivityTimer, true);
-        });
-        if (inactivityTimerRef.current) {
-          clearTimeout(inactivityTimerRef.current);
-          inactivityTimerRef.current = null;
-        }
-      };
-    }
-  }, [currentUser, resetInactivityTimer]);
-
-  // Auth state observer
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-      if (user) {
-        console.log('✅ User logged in:', user.email);
-      } else {
-        console.log('❌ No user logged in');
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const signup = async (email, password) => {
+  const signup = useCallback(async (email, password) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ Signup successful:', userCredential.user.email);
@@ -139,9 +84,9 @@ export const AuthProvider = ({ children }) => {
       
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login successful:', userCredential.user.email);
@@ -171,9 +116,9 @@ export const AuthProvider = ({ children }) => {
       
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
-  const resetPassword = async (email) => {
+  const resetPassword = useCallback(async (email) => {
     try {
       await sendPasswordResetEmail(auth, email);
       console.log('✅ Password reset email sent');
@@ -195,7 +140,66 @@ export const AuthProvider = ({ children }) => {
       
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
+
+  // ============================================
+  // 🎯 EFFECTS
+  // ============================================
+
+  // Initialize auth persistence
+  useEffect(() => {
+    setPersistence(auth, browserSessionPersistence)
+      .then(() => {
+        console.log('✅ Firebase persistence set to SESSION');
+      })
+      .catch((error) => {
+        console.error('❌ Error setting persistence:', error);
+      });
+  }, []);
+
+  // Setup activity listeners
+  useEffect(() => {
+    if (currentUser) {
+      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+      
+      console.log('✅ Activity listeners attached');
+      
+      events.forEach(event => {
+        document.addEventListener(event, resetInactivityTimer, true);
+      });
+
+      resetInactivityTimer();
+
+      return () => {
+        console.log('🧹 Cleaning up activity listeners');
+        events.forEach(event => {
+          document.removeEventListener(event, resetInactivityTimer, true);
+        });
+        if (inactivityTimerRef.current) {
+          clearTimeout(inactivityTimerRef.current);
+          inactivityTimerRef.current = null;
+        }
+      };
+    }
+  }, [currentUser, resetInactivityTimer]);
+
+  // 🔑 Auth state observer - UNE SEULE FOIS
+  useEffect(() => {
+    console.log('🔐 Setting up auth observer...');
+    
+    authUnsubscribeRef.current = onAuthStateChanged(auth, (user) => {
+      console.log('👤 Auth state changed:', user ? user.email : 'No user');
+      setCurrentUser(user);
+      setLoading(false);
+    });
+
+    return () => {
+      console.log('🧹 Cleaning up auth observer');
+      if (authUnsubscribeRef.current) {
+        authUnsubscribeRef.current();
+      }
+    };
+  }, []); // ⚠️ Empty deps - run ONCE
 
   const value = {
     currentUser,
