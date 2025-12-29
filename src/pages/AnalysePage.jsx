@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +16,11 @@ const AnalysePage = () => {
   const [results, setResults] = useState(null);
   const [deletedContacts, setDeletedContacts] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  // 🎯 Reset scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
