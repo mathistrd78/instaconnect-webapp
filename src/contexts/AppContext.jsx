@@ -9,7 +9,8 @@ import {
   writeBatch,
   getDoc,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  updateDoc
 } from 'firebase/firestore';
 
 const AppContext = createContext();
@@ -271,7 +272,7 @@ export const AppProvider = ({ children }) => {
   }, [currentUser, loadFromLocalStorage, saveToLocalStorage]);
 
   // ============================================
-  // 💾 SAVE DATA (with debouncing)
+  // 💾 SAVE DATA (with debouncing) - 🛡️ VERSION SÉCURISÉE
   // ============================================
 
   const debouncedSave = useCallback(() => {
@@ -305,26 +306,29 @@ export const AppProvider = ({ children }) => {
           pendingChangesRef.current.contacts.clear();
         }
 
-        // Sauvegarder metadata si modifié
+        // 🛡️ SAUVEGARDER METADATA AVEC updateDoc au lieu de setDoc
         if (pendingChangesRef.current.metadata) {
-          console.log('💾 Saving metadata...');
+          console.log('💾 Saving metadata (SAFE MODE)...');
           const userRef = doc(db, 'users', userId);
-          const metadata = {
+          
+          // 🛡️ UTILISER updateDoc pour NE TOUCHER QUE les champs metadata
+          batch.update(userRef, {
             customTags,
             customFields,
             defaultFields
-          };
-          batch.set(userRef, metadata, { merge: true });
+          });
+          
           hasChanges = true;
 
           // Mettre à jour cache metadata
-          saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, metadata);
+          const cacheData = { customTags, customFields, defaultFields };
+          saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, cacheData);
           pendingChangesRef.current.metadata = false;
         }
 
         if (hasChanges) {
           await batch.commit();
-          console.log('✅ Data saved to Firebase');
+          console.log('✅ Data saved to Firebase (SAFE MODE)');
         }
       } catch (error) {
         console.error('❌ Error saving to Firebase:', error);
@@ -422,7 +426,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [currentUser, saveToLocalStorage]);
 
-  // 🎯 NOUVELLE FONCTION : saveContacts pour FieldsPage (drag & drop)
+  // 🛡️ FONCTION SAVECONTACTS SÉCURISÉE - Pour FieldsPage drag & drop
   const saveContacts = useCallback(async (contactsToSave = null, saveMetadata = false, explicitMetadata = null) => {
     if (!currentUser) return;
 
@@ -442,7 +446,7 @@ export const AppProvider = ({ children }) => {
         });
       }
 
-      // Sauvegarder metadata
+      // 🛡️ SAUVEGARDER METADATA DE MANIÈRE SÉCURISÉE
       if (saveMetadata) {
         const userRef = doc(db, 'users', userId);
         const metadataToSave = explicitMetadata || {
@@ -451,10 +455,11 @@ export const AppProvider = ({ children }) => {
           defaultFields
         };
         
-        batch.set(userRef, metadataToSave, { merge: true });
+        // 🛡️ UTILISER update au lieu de set pour préserver les autres champs
+        batch.update(userRef, metadataToSave);
         operationsCount++;
 
-        // 🎯 IMPORTANT : Mettre à jour les états React avec les nouvelles données
+        // 🎯 Mettre à jour les états React avec les nouvelles données
         if (explicitMetadata) {
           console.log('🔄 Updating React states with new metadata...');
           
@@ -470,14 +475,14 @@ export const AppProvider = ({ children }) => {
             setCustomTags(explicitMetadata.customTags);
           }
 
-          // Mettre à jour le cache localStorage
+          // Mettre à jour le cache localStorage (seulement metadata)
           saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, metadataToSave);
         }
       }
 
       if (operationsCount > 0) {
         await batch.commit();
-        console.log(`✅ ${operationsCount} operation(s) saved to Firestore`);
+        console.log(`✅ ${operationsCount} operation(s) saved to Firestore (SAFE MODE)`);
       }
     } catch (error) {
       console.error('❌ Error saving to Firestore:', error);
@@ -583,7 +588,7 @@ export const AppProvider = ({ children }) => {
     setCustomTags,
     getAllFields,
     loadUserData,
-    saveContacts, // 🎯 AJOUTÉ : Export de saveContacts pour FieldsPage
+    saveContacts,
     forceSave,
     loading,
     darkMode,
