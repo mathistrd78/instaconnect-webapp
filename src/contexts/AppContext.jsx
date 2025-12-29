@@ -422,6 +422,69 @@ export const AppProvider = ({ children }) => {
     }
   }, [currentUser, saveToLocalStorage]);
 
+  // 🎯 NOUVELLE FONCTION : saveContacts pour FieldsPage (drag & drop)
+  const saveContacts = useCallback(async (contactsToSave = null, saveMetadata = false, explicitMetadata = null) => {
+    if (!currentUser) return;
+
+    const userId = currentUser.uid;
+
+    try {
+      const batch = writeBatch(db);
+      let operationsCount = 0;
+
+      // Sauvegarder contacts si fournis
+      if (contactsToSave) {
+        const contactsArray = Array.isArray(contactsToSave) ? contactsToSave : [contactsToSave];
+        contactsArray.forEach(contact => {
+          const contactRef = doc(db, 'users', userId, 'contacts', contact.id);
+          batch.set(contactRef, contact);
+          operationsCount++;
+        });
+      }
+
+      // Sauvegarder metadata
+      if (saveMetadata) {
+        const userRef = doc(db, 'users', userId);
+        const metadataToSave = explicitMetadata || {
+          customTags,
+          customFields,
+          defaultFields
+        };
+        
+        batch.set(userRef, metadataToSave, { merge: true });
+        operationsCount++;
+
+        // 🎯 IMPORTANT : Mettre à jour les états React avec les nouvelles données
+        if (explicitMetadata) {
+          console.log('🔄 Updating React states with new metadata...');
+          
+          if (explicitMetadata.defaultFields) {
+            setDefaultFields(explicitMetadata.defaultFields);
+          }
+          
+          if (explicitMetadata.customFields) {
+            setCustomFields(explicitMetadata.customFields);
+          }
+          
+          if (explicitMetadata.customTags) {
+            setCustomTags(explicitMetadata.customTags);
+          }
+
+          // Mettre à jour le cache localStorage
+          saveToLocalStorage(`${STORAGE_KEYS.METADATA}_${userId}`, metadataToSave);
+        }
+      }
+
+      if (operationsCount > 0) {
+        await batch.commit();
+        console.log(`✅ ${operationsCount} operation(s) saved to Firestore`);
+      }
+    } catch (error) {
+      console.error('❌ Error saving to Firestore:', error);
+      throw error;
+    }
+  }, [currentUser, customTags, customFields, defaultFields, saveToLocalStorage]);
+
   // Fonction pour forcer la sauvegarde immédiate
   const forceSave = useCallback(async () => {
     if (saveTimeoutRef.current) {
@@ -520,7 +583,8 @@ export const AppProvider = ({ children }) => {
     setCustomTags,
     getAllFields,
     loadUserData,
-    forceSave, // Export forceSave pour les cas où on veut sauver immédiatement
+    saveContacts, // 🎯 AJOUTÉ : Export de saveContacts pour FieldsPage
+    forceSave,
     loading,
     darkMode,
     toggleDarkMode
