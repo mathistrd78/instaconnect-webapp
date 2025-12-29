@@ -55,6 +55,25 @@ const ContactsPage = () => {
     });
   };
 
+  // 🆕 Fonction pour extraire la première lettre alphabétique
+  const getFirstLetter = (firstName) => {
+    if (!firstName) return '#';
+    
+    // Chercher la première lettre alphabétique (ignorer @, _, -, etc.)
+    const match = firstName.match(/[a-zA-ZÀ-ÿ]/);
+    if (match) {
+      return match[0].toUpperCase();
+    }
+    
+    // Si pas de lettre mais des chiffres, retourner #
+    if (/[0-9]/.test(firstName)) {
+      return '#';
+    }
+    
+    // Par défaut
+    return '#';
+  };
+
   useEffect(() => {
     let filtered = [...contacts];
 
@@ -131,11 +150,10 @@ const ContactsPage = () => {
   const groupedContacts = useMemo(() => {
     const groups = {};
     filteredContacts.forEach(contact => {
-      let firstName = contact.firstName || '';
-      if (firstName.startsWith('@')) {
-        firstName = firstName.substring(1);
-      }
-      const firstLetter = (firstName[0] || '#').toUpperCase();
+      const firstName = contact.firstName || '';
+      // 🎯 Utiliser la nouvelle fonction pour obtenir la première lettre
+      const firstLetter = getFirstLetter(firstName);
+      
       if (!groups[firstLetter]) {
         groups[firstLetter] = [];
       }
