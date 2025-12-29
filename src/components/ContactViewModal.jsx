@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { cityAutocomplete } from '../utils/cityAutocomplete';
 import '../styles/ContactViewModal.css';
 
@@ -119,31 +119,19 @@ const ContactViewModal = ({ contact, onClose, onEdit }) => {
     try {
       const userId = currentUser.uid;
       
-      // Récupérer la liste actuelle "A ne plus suivre"
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      let doNotFollowList = [];
-      
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        doNotFollowList = data.doNotFollowList || [];
-      }
-
       // Extraire le username Instagram (sans @)
       const username = contact.instagram.startsWith('@') 
         ? contact.instagram.substring(1) 
         : contact.instagram;
 
-      // Ajouter à la liste si pas déjà présent
-      if (!doNotFollowList.includes(username)) {
-        doNotFollowList.push(username);
-        
-        // Sauvegarder dans Firebase
-        await setDoc(doc(db, 'users', userId), {
-          doNotFollowList: doNotFollowList
-        }, { merge: true });
+      // 🛡️ OPÉRATION ATOMIQUE avec arrayUnion
+      // Pas besoin de lire d'abord - Firebase gère tout !
+      // arrayUnion ajoute seulement si pas déjà présent
+      await updateDoc(doc(db, 'users', userId), {
+        doNotFollowList: arrayUnion(username)
+      });
 
-        console.log(`✅ ${username} ajouté à la liste "A ne plus suivre"`);
-      }
+      console.log(`✅ ${username} ajouté à la liste "A ne plus suivre" (ATOMIC OPERATION)`);
 
       // Supprimer le contact
       await deleteContact(contact.id);
