@@ -411,8 +411,8 @@ const AnalysePage = () => {
         await Promise.all(batches);
         console.log(`✅ Created ${newContactsToCreate.length} contacts in ${batches.length} batch(es) instead of ${newContactsToCreate.length} individual writes`);
         
-        // Update local state
-        setContacts(prev => [...prev, ...newContactsToCreate]);
+        // 🎯 PAS besoin de setContacts ici - le listener onSnapshot le fera automatiquement
+        console.log('👂 Waiting for onSnapshot listener to update contacts...');
       }
 
       setProgress('Sauvegarde des données Instagram...');
